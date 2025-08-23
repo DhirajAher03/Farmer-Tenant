@@ -78,6 +78,7 @@ const Sidebar = () => {
   );
 
   return (
+    
     <>
       {/* Mobile Navbar */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b flex items-center justify-between px-4 py-3 shadow">
