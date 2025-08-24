@@ -1,34 +1,42 @@
-import { useState } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import './App.css'
-import CustomerPage from './Components/Pages/CustomerPage'
-import Dashboard from './Components/dashboard/Dashboard'
-import OrderPage from './Components/Pages/OrderPage'
-import MeasurementEntry from './Components/Pages/MeasurementEntry'
-import Layout from './Components/Layout/Layout'
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import './App.css';
+import CustomerPage from './Components/Pages/CustomerPage';
+import Dashboard from './Components/dashboard/Dashboard';
+import OrderPage from './Components/Pages/OrderPage';
+import MeasurementEntry from './Components/Pages/MeasurementEntry';
+import Layout from './Components/Layout/Layout';
+import LoginPage from './Components/Pages/LoginPage';
+import ProtectedRoute from './Components/ProtectedRoute'; // ✅ import
 
 function App() {
-
   return (
-    <>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="customers" element={<CustomerPage />} />
-            <Route path="orders" element={<OrderPage />} />
-            <Route path="measurements" element={<MeasurementEntry />} />
-          {/*   <Route path="messaging" element={<Messaging />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="settings" element={<Settings />} /> */}
-          </Route>
-        </Routes>
+    <BrowserRouter>
+      <Routes>
+        {/* Public Route */}
+        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/login" element={<LoginPage />} />
 
-      </BrowserRouter>
+        {/* Protected Layout */}
+        <Route
+          path="/layout"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="customers" element={<CustomerPage />} />
+          <Route path="orders" element={<OrderPage />} />
+          <Route path="measurements" element={<MeasurementEntry />} />
+        </Route>
 
-    </>
-  )
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/login" />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
