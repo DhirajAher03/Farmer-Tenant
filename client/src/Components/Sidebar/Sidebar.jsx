@@ -25,8 +25,9 @@ const Sidebar = () => {
 const menuItems = [
   { to: "/layout/dashboard", label: "Dashboard", icon: <BsGridFill className="mr-3 text-lg" /> },
   { to: "/layout/customers", label: "Customers", icon: <FaUserFriends className="mr-3 text-lg" /> },
-  { to: "/layout/orders", label: "Orders", icon: <AiOutlineShoppingCart className="mr-3 text-lg" /> },
-  { to: "/layout/measurements", label: "Measurements", icon: <FaRuler className="mr-3 text-lg" /> },
+ { to: "/layout/measurements", label: "Measurements", icon: <FaRuler className="mr-3 text-lg" /> },
+{ to: "/layout/orders", label: "Orders", icon: <AiOutlineShoppingCart className="mr-3 text-lg" /> },
+
   { to: "/layout/messaging", label: "Messaging", icon: <TbMessage className="mr-3 text-lg" /> },
   { to: "/layout/reports", label: "Reports", icon: <TbReport className="mr-3 text-lg" /> },
   { to: "/layout/settings", label: "Settings", icon: <FiSettings className="mr-3 text-lg" /> },

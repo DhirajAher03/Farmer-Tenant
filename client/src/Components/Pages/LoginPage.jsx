@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { FiLogIn } from "react-icons/fi";
-import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai"; // ✅ Eye icons
+import { AiOutlineEye, AiOutlineEyeInvisible, AiOutlineCheckCircle } from "react-icons/ai"; // ✅ Added tick icon
 import princelogo from "../../assets/princelogo.png";
 import { useNavigate } from "react-router-dom";
 import API from "../../api/axios";
@@ -8,14 +8,16 @@ import API from "../../api/axios";
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // ✅ toggle
-  const [rememberMe, setRememberMe] = useState(false); // ✅ remember me
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState(""); // ✅ New state
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccessMessage("");
 
     try {
       const { data } = await API.post("/auth/login", { email, password });
@@ -29,7 +31,12 @@ const LoginPage = () => {
           localStorage.removeItem("rememberEmail");
         }
 
-        navigate("/layout/dashboard");
+        // ✅ Show success message
+        setSuccessMessage("Login Successful!");
+        setTimeout(() => {
+          setSuccessMessage("");
+          navigate("/layout/dashboard");
+        }, 2000); // ✅ 2 sec delay before redirect
       } else {
         setError("Login failed: token not received");
       }
@@ -38,7 +45,6 @@ const LoginPage = () => {
     }
   };
 
-  // ✅ Load remembered email on mount
   React.useEffect(() => {
     const savedEmail = localStorage.getItem("rememberEmail");
     if (savedEmail) {
@@ -49,6 +55,14 @@ const LoginPage = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50 relative">
+      {/* ✅ Success Notification */}
+      {successMessage && (
+        <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in">
+          <AiOutlineCheckCircle size={20} className="text-green-600" />
+          <span>{successMessage}</span>
+        </div>
+      )}
+
       <div className="w-full max-w-md bg-white shadow-lg rounded-xl p-8">
         {/* Logo + Heading */}
         <div className="text-center mb-6">

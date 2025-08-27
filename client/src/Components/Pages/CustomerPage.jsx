@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiSearch, FiFilter, FiEdit, FiTrash2 } from "react-icons/fi";
-import { HiOutlineLocationMarker } from "react-icons/hi";
+import { FiSearch, FiFilter, FiTrash2 } from "react-icons/fi";
 import { AiOutlineExport } from "react-icons/ai";
 import { FaUserPlus } from "react-icons/fa";
 import API from "../../api/axios.js"; // ✅ Axios instance
@@ -22,7 +21,7 @@ const CustomersPage = () => {
   const [cityFilter, setCityFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
 
-  // Fetch customers on load
+  // ✅ Fetch customers on load
   useEffect(() => {
     fetchCustomers();
   }, []);
@@ -43,11 +42,22 @@ const CustomersPage = () => {
     setActiveTab("orders");
   };
 
+  // ✅ Add Customer + Log Activity
   const handleAddCustomer = async (e) => {
     e.preventDefault();
     try {
+      // 1. Add customer
       const res = await API.post("/customers", newCustomer);
+
+      // 2. Update state
       setCustomers([...customers, res.data]);
+
+      // 3. Add Activity Log
+      await API.post("/activities", {
+        message: `Customer added successfully: ${newCustomer.name}`,
+      });
+
+      // 4. Reset modal
       setIsAddModalOpen(false);
       setNewCustomer({ name: "", mobile: "", city: "", orderDate: "" });
     } catch (error) {
@@ -61,6 +71,11 @@ const CustomersPage = () => {
       setCustomers(customers.map((c) => (c._id === editData._id ? res.data : c)));
       setSelectedCustomer(res.data);
       setIsEditing(false);
+
+      // ✅ Log Update Activity
+      await API.post("/activities", {
+        message: `Customer updated: ${editData.name}`,
+      });
     } catch (error) {
       console.error("Error updating customer:", error);
     }
@@ -69,17 +84,23 @@ const CustomersPage = () => {
   const handleDeleteCustomer = async (id) => {
     if (!window.confirm("Are you sure you want to delete this customer?")) return;
     try {
+      const deletedCustomer = customers.find((c) => c._id === id);
       await API.delete(`/customers/${id}`);
       setCustomers(customers.filter((c) => c._id !== id));
       if (selectedCustomer && selectedCustomer._id === id) {
         setSelectedCustomer(null);
       }
+
+      // ✅ Log Delete Activity
+      await API.post("/activities", {
+        message: `Customer deleted: ${deletedCustomer?.name || "Unknown"}`,
+      });
     } catch (error) {
       console.error("Error deleting customer:", error);
     }
   };
 
-  // Filtered customers
+  // ✅ Filtered customers
   const filteredCustomers = customers.filter((c) => {
     const matchesSearch =
       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -93,7 +114,7 @@ const CustomersPage = () => {
 
   return (
     <div className="w-full min-h-screen p-6" style={{ backgroundColor: "#f5f9ff" }}>
-      {/* Header */}
+      {/* ✅ Header */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">
           Customers <span className="text-gray-400 text-base">Manage</span>
@@ -111,59 +132,43 @@ const CustomersPage = () => {
         </div>
       </div>
 
-      {/* Main Card */}
+      {/* ✅ Main Card */}
       <div className="bg-white rounded-2xl shadow p-6">
-        {/* Tabs */}
+        {/* Search & Filters */}
         <div className="flex justify-between items-center mb-6">
-          <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-            Customer Directory
-          </h3>
-          {/* Tabs / Refresh */}
-          <div className="flex justify-end mb-2">
-            <button
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm hover:bg-blue-700"
-              onClick={() => window.location.reload()}
-            >
-              <AiOutlineExport /> Refresh
+          <div className="flex gap-3 items-center">
+            <div className="flex items-center border rounded-xl px-4 py-2 text-gray-500 bg-white shadow-sm w-64">
+              <FiSearch className="mr-2" />
+              <input
+                type="text"
+                placeholder="Search customers"
+                className="outline-none text-sm w-full"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <button className="flex items-center gap-1 px-4 py-2 bg-gray-100 rounded-xl text-sm">
+              <FiFilter /> Filters
             </button>
+            <input
+              type="text"
+              placeholder="City"
+              className="px-3 py-1 border rounded-xl text-sm"
+              value={cityFilter}
+              onChange={(e) => setCityFilter(e.target.value)}
+            />
+            <input
+              type="date"
+              className="px-3 py-1 border rounded-xl text-sm"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+            />
           </div>
-
         </div>
 
+        {/* ✅ Customer Table */}
         <div className="grid grid-cols-3 gap-6">
-          {/* Left - Customer Table */}
           <div className="col-span-2 bg-white rounded-xl p-4">
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex gap-3 items-center">
-                <div className="flex items-center border rounded-xl px-4 py-2 text-gray-500 bg-white shadow-sm w-64">
-                  <FiSearch className="mr-2" />
-                  <input
-                    type="text"
-                    placeholder="Search customers"
-                    className="outline-none text-sm w-full"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <button className="flex items-center gap-1 px-4 py-2 bg-gray-100 rounded-xl text-sm">
-                  <FiFilter /> Filters
-                </button>
-                <input
-                  type="text"
-                  placeholder="City"
-                  className="px-3 py-1 border rounded-xl text-sm"
-                  value={cityFilter}
-                  onChange={(e) => setCityFilter(e.target.value)}
-                />
-                <input
-                  type="date"
-                  className="px-3 py-1 border rounded-xl text-sm"
-                  value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
-                />
-              </div>
-            </div>
-
             <table className="w-full text-sm border-separate border-spacing-0 rounded-xl overflow-hidden border-2 border-gray-100">
               <thead>
                 <tr className="bg-white text-gray-600">
@@ -207,7 +212,7 @@ const CustomersPage = () => {
             </table>
           </div>
 
-          {/* Right - Customer Details */}
+          {/* ✅ Right Panel - Customer Details */}
           <div className="bg-[#f5f9ff] rounded-xl border p-4 flex flex-col justify-between">
             {selectedCustomer ? (
               <>
@@ -218,14 +223,15 @@ const CustomersPage = () => {
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
-                      className={`px-3 py-1 rounded-lg text-sm mb-2 w-full text-left ${activeTab === tab ? "bg-blue-600 text-white" : "bg-white border"
-                        }`}
+                      className={`px-3 py-1 rounded-lg text-sm mb-2 w-full text-left ${
+                        activeTab === tab ? "bg-blue-600 text-white" : "bg-white border"
+                      }`}
                     >
                       {tab === "orders"
                         ? "Order History"
                         : tab === "measurements"
-                          ? "Measurements"
-                          : "Messages"}
+                        ? "Measurements"
+                        : "Messages"}
                     </button>
                   ))}
 
@@ -241,8 +247,8 @@ const CustomersPage = () => {
                                 field === "orderDate"
                                   ? editData.orderDate
                                     ? new Date(editData.orderDate)
-                                      .toISOString()
-                                      .split("T")[0]
+                                        .toISOString()
+                                        .split("T")[0]
                                     : ""
                                   : editData[field] || ""
                               }
@@ -250,14 +256,17 @@ const CustomersPage = () => {
                                 setEditData({ ...editData, [field]: e.target.value })
                               }
                               readOnly={!isEditing}
-                              className={`w-full border rounded-xl px-3 py-2 text-sm ${isEditing ? "bg-white" : "bg-gray-100"
-                                }`}
+                              className={`w-full border rounded-xl px-3 py-2 text-sm ${
+                                isEditing ? "bg-white" : "bg-gray-100"
+                              }`}
                             />
                           </div>
                         ))}
                       </div>
                     )}
-                    {activeTab === "measurements" && <p className="text-sm">Measurement details...</p>}
+                    {activeTab === "measurements" && (
+                      <p className="text-sm">Measurement details...</p>
+                    )}
                     {activeTab === "messages" && <p className="text-sm">Customer messages...</p>}
                   </div>
                 </div>
@@ -287,7 +296,7 @@ const CustomersPage = () => {
         </div>
       </div>
 
-      {/* Add Customer Modal */}
+      {/* ✅ Add Customer Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-lg p-6 w-full max-w-md">
