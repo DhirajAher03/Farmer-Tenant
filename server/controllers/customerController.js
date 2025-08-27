@@ -12,9 +12,9 @@ const getCustomers = async (req, res) => {
 
 // Add a customer
 const addCustomer = async (req, res) => {
-  const { name, mobile, city, orderDate } = req.body;
+  const { name, mobile, city, DOB } = req.body;
   try {
-    const newCustomer = new Customer({ name, mobile, city, orderDate });
+    const newCustomer = new Customer({ name, mobile, city, DOB });
     const savedCustomer = await newCustomer.save();
     res.status(201).json(savedCustomer);
   } catch (error) {

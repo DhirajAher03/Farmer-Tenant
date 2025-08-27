@@ -15,8 +15,11 @@ connectDB();
 
 const authRoutes = require("./routes/authRoutes"); // Your auth routes
 const customerRoutes = require("./routes/customerRoutes");
+const orderRoutes = require("./routes/orderRoute");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/customers", customerRoutes);
+app.use("/api/orders", orderRoutes);
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

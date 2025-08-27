@@ -21,6 +21,29 @@ const CustomersPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [cityFilter, setCityFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
+  const [customerOrders, setCustomerOrders] = useState([]);
+  const [customerMeasurements, setCustomerMeasurements] = useState([]);
+
+  const handleView = async (customer) => {
+    setSelectedCustomer(customer);
+    setEditData(customer);
+    setIsEditing(false);
+    setActiveTab("orders");
+
+    try {
+      // Fetch customer orders
+      const ordersRes = await API.get(`/customers/${customer._id}/orders`);
+      setCustomerOrders(ordersRes.data || []);
+
+      // Fetch customer measurements
+      const measRes = await API.get(`/customers/${customer._id}/measurements`);
+      setCustomerMeasurements(measRes.data || []);
+    } catch (error) {
+      console.error("Error fetching related data:", error);
+      setCustomerOrders([]);
+      setCustomerMeasurements([]);
+    }
+  };
 
   // Fetch customers on load
   useEffect(() => {
@@ -34,13 +57,6 @@ const CustomersPage = () => {
     } catch (error) {
       console.error("Error fetching customers:", error);
     }
-  };
-
-  const handleView = (customer) => {
-    setSelectedCustomer(customer);
-    setEditData(customer);
-    setIsEditing(false);
-    setActiveTab("orders");
   };
 
   const handleAddCustomer = async (e) => {
@@ -58,7 +74,9 @@ const CustomersPage = () => {
   const handleSaveChanges = async () => {
     try {
       const res = await API.put(`/customers/${editData._id}`, editData);
-      setCustomers(customers.map((c) => (c._id === editData._id ? res.data : c)));
+      setCustomers(
+        customers.map((c) => (c._id === editData._id ? res.data : c))
+      );
       setSelectedCustomer(res.data);
       setIsEditing(false);
     } catch (error) {
@@ -67,7 +85,8 @@ const CustomersPage = () => {
   };
 
   const handleDeleteCustomer = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this customer?")) return;
+    if (!window.confirm("Are you sure you want to delete this customer?"))
+      return;
     try {
       await API.delete(`/customers/${id}`);
       setCustomers(customers.filter((c) => c._id !== id));
@@ -86,13 +105,17 @@ const CustomersPage = () => {
       c.mobile.includes(searchQuery);
     const matchesCity = cityFilter ? c.city === cityFilter : true;
     const matchesDate = dateFilter
-      ? c.orderDate && new Date(c.orderDate).toISOString().split("T")[0] === dateFilter
+      ? c.orderDate &&
+        new Date(c.orderDate).toISOString().split("T")[0] === dateFilter
       : true;
     return matchesSearch && matchesCity && matchesDate;
   });
 
   return (
-    <div className="w-full min-h-screen p-6" style={{ backgroundColor: "#f5f9ff" }}>
+    <div
+      className="w-full min-h-screen p-6"
+      style={{ backgroundColor: "#f5f9ff" }}
+    >
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">
@@ -127,7 +150,6 @@ const CustomersPage = () => {
               <AiOutlineExport /> Refresh
             </button>
           </div>
-
         </div>
 
         <div className="grid grid-cols-3 gap-6">
@@ -171,20 +193,23 @@ const CustomersPage = () => {
                   <th className="text-left py-3 px-3">Name</th>
                   <th className="text-left py-3 px-3">Mobile</th>
                   <th className="text-left py-3 px-3">City</th>
-                  <th className="text-left py-3 px-3">Order Date</th>
+                  <th className="text-left py-3 px-3">DOB</th>
                   <th className="text-left py-3 px-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredCustomers.map((customer, index) => (
-                  <tr key={customer._id} className="bg-[#f5f9ff] hover:bg-blue-100">
+                  <tr
+                    key={customer._id}
+                    className="bg-[#f5f9ff] hover:bg-blue-100"
+                  >
                     <td className="py-3 px-3">{index + 1}</td>
                     <td className="px-3">{customer.name}</td>
                     <td className="px-3">{customer.mobile}</td>
                     <td className="px-3">{customer.city}</td>
                     <td className="px-3">
-                      {customer.orderDate
-                        ? new Date(customer.orderDate).toLocaleDateString("en-GB")
+                      {customer.DOB
+                        ? new Date(customer.DOB).toLocaleDateString("en-GB")
                         : ""}
                     </td>
                     <td className="px-3 flex gap-2">
@@ -212,53 +237,106 @@ const CustomersPage = () => {
             {selectedCustomer ? (
               <>
                 <div>
-                  <p className="text-sm text-gray-400 mb-4">Selected: {selectedCustomer.name}</p>
+                  <p className="text-sm text-gray-400 mb-4">
+                    Selected: {selectedCustomer.name}
+                  </p>
 
                   {["orders", "measurements", "messages"].map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
-                      className={`px-3 py-1 rounded-lg text-sm mb-2 w-full text-left ${activeTab === tab ? "bg-blue-600 text-white" : "bg-white border"
-                        }`}
+                      className={`px-3 py-1 rounded-lg text-sm mb-2 w-full text-left ${
+                        activeTab === tab
+                          ? "bg-blue-600 text-white"
+                          : "bg-white border"
+                      }`}
                     >
                       {tab === "orders"
                         ? "Order History"
                         : tab === "measurements"
-                          ? "Measurements"
-                          : "Messages"}
+                        ? "Measurements"
+                        : "Messages"}
                     </button>
                   ))}
 
                   <div className="mt-4">
                     {activeTab === "orders" && (
-                      <div className="grid grid-cols-2 gap-4">
-                        {["name", "mobile", "city", "orderDate"].map((field) => (
-                          <div key={field}>
-                            <label className="text-sm text-gray-500 capitalize">{field}</label>
-                            <input
-                              type={field === "orderDate" ? "date" : "text"}
-                              value={
-                                field === "orderDate"
-                                  ? editData.orderDate
-                                    ? new Date(editData.orderDate)
-                                      .toISOString()
-                                      .split("T")[0]
-                                    : ""
-                                  : editData[field] || ""
-                              }
-                              onChange={(e) =>
-                                setEditData({ ...editData, [field]: e.target.value })
-                              }
-                              readOnly={!isEditing}
-                              className={`w-full border rounded-xl px-3 py-2 text-sm ${isEditing ? "bg-white" : "bg-gray-100"
-                                }`}
-                            />
-                          </div>
-                        ))}
+                      <div>
+                        <h4 className="font-semibold mb-2">Orders</h4>
+                        {customerOrders.length > 0 ? (
+                          <ul className="space-y-2">
+                            {customerOrders.map((order) => (
+                              <li
+                                key={order._id}
+                                className="p-2 border rounded bg-white"
+                              >
+                                <p>
+                                  <strong>Order ID:</strong> {order.orderId}
+                                </p>
+                                <p>
+                                  <strong>Garment:</strong> {order.garmentType}
+                                </p>
+                                <p>
+                                  <strong>Status:</strong> {order.status}
+                                </p>
+                                <p>
+                                  <strong>Due Date:</strong>{" "}
+                                  {new Date(order.dueDate).toLocaleDateString()}
+                                </p>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-gray-500">
+                            No orders found.
+                          </p>
+                        )}
                       </div>
                     )}
-                    {activeTab === "measurements" && <p className="text-sm">Measurement details...</p>}
-                    {activeTab === "messages" && <p className="text-sm">Customer messages...</p>}
+
+                    {activeTab === "measurements" && (
+                      <div>
+                        <h4 className="font-semibold mb-2">Measurements</h4>
+                        {customerMeasurements.length > 0 ? (
+                          <table className="w-full text-sm border">
+                            <thead>
+                              <tr className="bg-gray-100">
+                                <th className="px-2 py-1 border">Field</th>
+                                <th className="px-2 py-1 border">Value</th>
+                                <th className="px-2 py-1 border">Unit</th>
+                                <th className="px-2 py-1 border">Notes</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {customerMeasurements.map((m, idx) => (
+                                <tr key={idx}>
+                                  <td className="border px-2 py-1">
+                                    {m.field}
+                                  </td>
+                                  <td className="border px-2 py-1">
+                                    {m.value}
+                                  </td>
+                                  <td className="border px-2 py-1">{m.unit}</td>
+                                  <td className="border px-2 py-1">
+                                    {m.notes}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p className="text-sm text-gray-500">
+                            No measurements found.
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {activeTab === "messages" && (
+                      <p className="text-sm text-gray-500">
+                        Customer messages...
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -281,7 +359,9 @@ const CustomersPage = () => {
                 </div>
               </>
             ) : (
-              <p className="text-gray-400 text-sm">Select a customer to view details</p>
+              <p className="text-gray-400 text-sm">
+                Select a customer to view details
+              </p>
             )}
           </div>
         </div>
@@ -298,7 +378,9 @@ const CustomersPage = () => {
                 <input
                   type="text"
                   value={newCustomer.name}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                  onChange={(e) =>
+                    setNewCustomer({ ...newCustomer, name: e.target.value })
+                  }
                   className="w-full border rounded-lg px-3 py-2"
                   required
                 />
@@ -308,7 +390,9 @@ const CustomersPage = () => {
                 <input
                   type="text"
                   value={newCustomer.mobile}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, mobile: e.target.value })}
+                  onChange={(e) =>
+                    setNewCustomer({ ...newCustomer, mobile: e.target.value })
+                  }
                   className="w-full border rounded-lg px-3 py-2"
                   required
                 />
@@ -318,7 +402,9 @@ const CustomersPage = () => {
                 <input
                   type="text"
                   value={newCustomer.city}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, city: e.target.value })}
+                  onChange={(e) =>
+                    setNewCustomer({ ...newCustomer, city: e.target.value })
+                  }
                   className="w-full border rounded-lg px-3 py-2"
                   required
                 />
@@ -328,7 +414,12 @@ const CustomersPage = () => {
                 <input
                   type="date"
                   value={newCustomer.orderDate}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, orderDate: e.target.value })}
+                  onChange={(e) =>
+                    setNewCustomer({
+                      ...newCustomer,
+                      orderDate: e.target.value,
+                    })
+                  }
                   className="w-full border rounded-lg px-3 py-2"
                   required
                 />
