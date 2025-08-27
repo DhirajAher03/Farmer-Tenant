@@ -1,12 +1,76 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FiUsers, FiClipboard, FiCheckCircle, FiClock } from "react-icons/fi";
-import { AiOutlineBell, AiOutlinePlus } from "react-icons/ai";
+import { AiOutlineBell } from "react-icons/ai";
 import { MdMessage } from "react-icons/md";
 import { TbReportAnalytics } from "react-icons/tb";
 import { FaRuler } from "react-icons/fa";
+import API from "../../api/axios.js"; // ✅ Your Axios instance
+import { useNavigate } from "react-router-dom"; // ✅ For navigation
 
 const Dashboard = () => {
-  const [filter, setFilter] = useState("all");
+  const [customersCount, setCustomersCount] = useState(0);
+  const [activities, setActivities] = useState([]);
+  const navigate = useNavigate(); // ✅ For navigation
+
+  useEffect(() => {
+    fetchCustomersCount();
+    fetchRecentActivity();
+  }, []);
+
+  // ✅ Fetch Customers Count
+  const fetchCustomersCount = async () => {
+    try {
+      const res = await API.get("/customers");
+      setCustomersCount(res.data.length);
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+    }
+  };
+
+  // ✅ Fetch Recent Activities
+  const fetchRecentActivity = async () => {
+    try {
+      const res = await API.get("/activities"); // ✅ Assume API endpoint exists
+      setActivities(res.data.slice(0, 3));
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+    }
+  };
+
+  // ✅ Logout Function
+  const handleLogout = () => {
+    localStorage.removeItem("token"); // ✅ Remove JWT token
+    sessionStorage.clear(); // ✅ Clear session if used
+    navigate("/login"); // ✅ Redirect to login page
+  };
+
+  // ✅ Add Customer (Local update)
+  const handleAddCustomer = () => {
+    const newCustomerId = customersCount + 1;
+    setCustomersCount(newCustomerId);
+
+    const newActivity = {
+      message: `✅ Customer Added: Customer ${newCustomerId} (ID: ${newCustomerId})`,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+
+    setActivities((prev) => [newActivity, ...prev].slice(0, 3));
+  };
+
+  // ✅ Navigate to Measurement Page
+  const handleNewMeasurement = () => {
+    navigate("/layout/measurements");
+  };
+
+  // ✅ Navigate to Messages Page
+  const handleSendMessage = () => {
+    navigate("/messages");
+  };
+
+  // ✅ Navigate to Reports Page
+  const handleViewReports = () => {
+    navigate("/reports");
+  };
 
   return (
     <div className="p-3 w-full bg-[#f5f9ff] min-h-screen">
@@ -23,8 +87,11 @@ const Dashboard = () => {
           <button className="flex items-center gap-2 px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-100">
             <AiOutlineBell /> Alerts
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            <AiOutlinePlus /> New Order
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+          >
+            Logout
           </button>
         </div>
       </div>
@@ -36,8 +103,8 @@ const Dashboard = () => {
             <h3 className="text-sm text-gray-500">Total Customers</h3>
             <FiUsers className="text-gray-400" />
           </div>
-          <h2 className="text-2xl font-bold">842</h2>
-          <p className="text-xs text-gray-500">+12 this week</p>
+          <h2 className="text-2xl font-bold">{customersCount}</h2>
+          <p className="text-xs text-gray-500">+ New customers this week</p>
         </div>
 
         <div className="bg-white border border-gray-200 p-5 rounded-xl shadow hover:shadow-md transition">
@@ -72,56 +139,22 @@ const Dashboard = () => {
       <div className="bg-white border border-gray-200 p-5 rounded-xl shadow mb-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold text-gray-800">Recent Activity</h3>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilter("all")}
-              className={`px-3 py-1 text-sm rounded-lg ${filter === "all"
-                ? "bg-blue-600 text-white"
-                : "border text-gray-600 hover:bg-gray-100"
-                }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setFilter("orders")}
-              className={`px-3 py-1 text-sm rounded-lg ${filter === "orders"
-                ? "bg-blue-600 text-white"
-                : "border text-gray-600 hover:bg-gray-100"
-                }`}
-            >
-              Orders
-            </button>
-            <button
-              onClick={() => setFilter("customers")}
-              className={`px-3 py-1 text-sm rounded-lg ${filter === "customers"
-                ? "bg-blue-600 text-white"
-                : "border text-gray-600 hover:bg-gray-100"
-                }`}
-            >
-              Customers
-            </button>
-          </div>
         </div>
 
         <ul className="space-y-3">
-          <li className="flex justify-between items-center bg-[#f5f9ff] p-3 rounded-lg">
-            <span className="text-gray-700">
-              📝 Order #1082 completed for John Mathews
-            </span>
-            <span className="text-xs text-gray-500">2m ago</span>
-          </li>
-          <li className="flex justify-between items-center bg-[#f5f9ff] p-3 rounded-lg">
-            <span className="text-gray-700">
-              📏 Measurements updated for Sara Ali
-            </span>
-            <span className="text-xs text-gray-500">1h ago</span>
-          </li>
-          <li className="flex justify-between items-center bg-[#f5f9ff] p-3 rounded-lg">
-            <span className="text-gray-700">
-              📩 Sent status update to Ahmed Khan
-            </span>
-            <span className="text-xs text-gray-500">3h ago</span>
-          </li>
+          {activities.length > 0 ? (
+            activities.map((activity, index) => (
+              <li
+                key={index}
+                className="flex justify-between items-center bg-[#f5f9ff] p-3 rounded-lg"
+              >
+                <span className="text-gray-700">{activity.message}</span>
+                <span className="text-xs text-gray-500">{activity.time}</span>
+              </li>
+            ))
+          ) : (
+            <p className="text-gray-400 text-sm">No recent activity</p>
+          )}
         </ul>
       </div>
 
@@ -131,16 +164,28 @@ const Dashboard = () => {
           Quick Actions
         </h3>
         <div className="flex flex-wrap gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          <button
+            onClick={handleAddCustomer}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
             <FiUsers /> Add Customer
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100">
+          <button
+            onClick={handleNewMeasurement}
+            className="flex items-center gap-2 px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100"
+          >
             <FaRuler /> New Measurement
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100">
+          <button
+            onClick={handleSendMessage}
+            className="flex items-center gap-2 px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100"
+          >
             <MdMessage /> Send Message
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100">
+          <button
+            onClick={handleViewReports}
+            className="flex items-center gap-2 px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100"
+          >
             <TbReportAnalytics /> View Reports
           </button>
         </div>

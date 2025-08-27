@@ -452,6 +452,19 @@ export default function OrderDetails() {
               </div>
             </div>
           </div>
+          <input
+            type="text"
+            placeholder="Enter Full City Name to search"
+            className="px-3 py-1 border rounded-xl text-sm"
+            value={cityFilter}
+            onChange={(e) => setCityFilter(e.target.value)}
+          />
+          {/* <input
+            type="date"
+            className="px-3 py-1 border rounded-xl text-sm"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+          /> */}
         </div>
 
       {/* Add Customer Modal */}
@@ -534,4 +547,4 @@ export default function OrderDetails() {
       )}
     </>
   );
-}
+};
