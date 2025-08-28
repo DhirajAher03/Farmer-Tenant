@@ -6,6 +6,7 @@ import OrderPage from './Components/Pages/OrderPage';
 import MeasurementEntry from './Components/Pages/MeasurementEntry';
 import Layout from './Components/Layout/Layout';
 import LoginPage from './Components/Pages/LoginPage';
+import SettingsPage from './Components/Pages/SettingPage';
 import ProtectedRoute from './Components/ProtectedRoute'; // ✅ import
 
 function App() {
@@ -28,8 +29,9 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="customers" element={<CustomerPage />} />
-          <Route path="orders" element={<OrderPage />} />
+          <Route path="orders" element={<OrderPage/>} />
           <Route path="measurements" element={<MeasurementEntry />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
 
         {/* Fallback */}

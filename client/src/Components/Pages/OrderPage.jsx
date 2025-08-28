@@ -1,15 +1,8 @@
 import { ArrowLeft, Printer, Save, Package } from "lucide-react";
 import { FaUserPlus } from "react-icons/fa";
-import {
-  Search,
-  SlidersHorizontal,
-  Edit,
-  Plus,
-  Copy,
-  PlusCircle,
-} from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import { useState, useEffect } from "react";
-import API from "../../api/axios"; //axios instance
+import API from "../../api/axios";
 
 export default function OrderDetails() {
   const [customers, setCustomers] = useState([]);
@@ -24,95 +17,6 @@ export default function OrderDetails() {
   const [orderDate, setOrderDate] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
-
-  useEffect(() => {
-    if (query.trim().length > 0) {
-      const matches = customers.filter((c) =>
-        c.name.toLowerCase().includes(query.toLowerCase())
-      );
-      setFiltered(matches);
-      setNotFound(matches.length === 0);
-    } else {
-      setFiltered([]);
-      setNotFound(false);
-    }
-  }, [query, customers]);
-
-  useEffect(() => {
-    // Generate unique order ID from backend when component mounts
-    const fetchOrderId = async () => {
-      try {
-        const res = await API.get("/orders/new"); // Change the endpoint to a new one that generates order ID
-        setOrderId(res.data.orderId);
-      } catch (err) {
-        console.error("Error fetching Order ID:", err);
-      }
-    };
-    fetchOrderId();
-
-    // default current date for order date
-    const today = new Date().toISOString().split("T")[0];
-    setOrderDate(today);
-  }, []);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!selectedCustomer) {
-      alert("Please select a customer!");
-      return;
-    }
-
-    if (!garmentType) {
-      alert("Please enter garment type!");
-      return;
-    }
-
-    if (dueDate && new Date(dueDate) < new Date()) {
-      alert("Due date cannot be before today!");
-      return;
-    }
-
-    // Format measurements data
-    const measurementsData = {
-      shirt: shirtData.map(item => ({
-        field: item.field,
-        value: item.value
-      })),
-      pant: pantData.map(item => ({
-        field: item.field,
-        value: item.value
-      }))
-    };
-
-    try {
-      const response = await API.post("/orders", {
-        orderId,
-        customerId: selectedCustomer._id,
-        garmentType,
-        status,
-        orderDate,
-        dueDate,
-        notes,
-        measurements: measurementsData
-      });
-      
-      if (response.data) {
-        alert("Order created successfully!");
-        // Clear form or redirect to orders list
-        setGarmentType("");
-        setNotes("");
-        setDueDate("");
-        setSelectedCustomer(null);
-        setQuery("");
-        // Reset measurements
-        setShirtData(shirtFields);
-        setPantData(pantFields);
-      }
-    } catch (err) {
-      console.error("Error creating order:", err);
-    }
-  };
 
   const [activeTab, setActiveTab] = useState("Shirt");
 
@@ -140,25 +44,6 @@ export default function OrderDetails() {
   const [shirtData, setShirtData] = useState(shirtFields);
   const [pantData, setPantData] = useState(pantFields);
 
-  // handle input change
-  const handleChange = (tab, idx, val) => {
-    if (tab === "Shirt") {
-      const updated = [...shirtData];
-      updated[idx].value = val;
-      setShirtData(updated);
-    } else {
-      const updated = [...pantData];
-      updated[idx].value = val;
-      setPantData(updated);
-    }
-  };
-
-  const handleSave = () => {
-    console.log("Shirt Measurements:", shirtData);
-    console.log("Pant Measurements:", pantData);
-    alert("Measurements saved!");
-  };
-
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
     name: "",
@@ -166,7 +51,7 @@ export default function OrderDetails() {
     city: "",
     DOB: "",
   });
-  // Fetch customers on load
+
   useEffect(() => {
     fetchCustomers();
   }, []);
@@ -179,6 +64,103 @@ export default function OrderDetails() {
       console.error("Error fetching customers:", error);
     }
   };
+
+  useEffect(() => {
+    if (query.trim().length > 0) {
+      const matches = customers.filter((c) =>
+        c.name.toLowerCase().includes(query.toLowerCase())
+      );
+      setFiltered(matches);
+      setNotFound(matches.length === 0);
+    } else {
+      setFiltered([]);
+      setNotFound(false);
+    }
+  }, [query, customers]);
+
+  useEffect(() => {
+    const fetchOrderId = async () => {
+      try {
+        const res = await API.get("/orders/new");
+        setOrderId(res.data.orderId);
+      } catch (err) {
+        console.error("Error fetching Order ID:", err);
+      }
+    };
+    fetchOrderId();
+
+    const today = new Date().toISOString().split("T")[0];
+    setOrderDate(today);
+  }, []);
+
+  const handleChange = (tab, idx, val) => {
+    if (tab === "Shirt") {
+      const updated = [...shirtData];
+      updated[idx].value = val;
+      setShirtData(updated);
+    } else {
+      const updated = [...pantData];
+      updated[idx].value = val;
+      setPantData(updated);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!selectedCustomer) {
+      alert("Please select a customer!");
+      return;
+    }
+
+    if (!garmentType) {
+      alert("Please enter garment type!");
+      return;
+    }
+
+    if (dueDate && new Date(dueDate) < new Date()) {
+      alert("Due date cannot be before today!");
+      return;
+    }
+
+    const measurementsData = {
+      shirt: shirtData.map(item => ({
+        field: item.field,
+        value: item.value
+      })),
+      pant: pantData.map(item => ({
+        field: item.field,
+        value: item.value
+      }))
+    };
+
+    try {
+      const response = await API.post("/orders", {
+        orderId,
+        customerId: selectedCustomer._id,
+        garmentType,
+        status,
+        orderDate,
+        dueDate,
+        notes,
+        measurements: measurementsData
+      });
+
+      if (response.data) {
+        alert("Order created successfully!");
+        setGarmentType("");
+        setNotes("");
+        setDueDate("");
+        setSelectedCustomer(null);
+        setQuery("");
+        setShirtData(shirtFields);
+        setPantData(pantFields);
+      }
+    } catch (err) {
+      console.error("Error creating order:", err);
+    }
+  };
+
   const handleAddCustomer = async (e) => {
     e.preventDefault();
     try {
@@ -196,12 +178,9 @@ export default function OrderDetails() {
       <div className="bg-[#f5f9ff] min-h-screen p-6 font-sans">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          {/* Left Section */}
           <div className="flex items-center space-x-2 text-[15px]">
             <span className="text-gray-600 font-medium">Measurements</span>
           </div>
-
-          {/* Right Buttons */}
           <div className="flex space-x-3">
             <button
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl shadow-sm hover:bg-blue-700"
@@ -220,7 +199,7 @@ export default function OrderDetails() {
           </div>
         </div>
 
-        {/*New Card CUSTOMER details here*/}
+        {/* Search Customer */}
         <div className="w-full max-w-md">
           <label className="text-sm text-gray-500">Select Customer</label>
           <input
@@ -230,8 +209,6 @@ export default function OrderDetails() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-
-          {/* Dropdown List */}
           {filtered.length > 0 && (
             <ul className="border rounded-xl mt-2 bg-white shadow max-h-48 overflow-y-auto">
               {filtered.map((cust) => (
@@ -249,8 +226,6 @@ export default function OrderDetails() {
               ))}
             </ul>
           )}
-
-          {/* Not found message */}
           {notFound && (
             <div className="mt-2 text-red-500 text-sm">
               User not found.{" "}
@@ -264,20 +239,13 @@ export default function OrderDetails() {
           )}
         </div>
 
-        {/* selected customer details */}
         {selectedCustomer && (
           <div className="mt-4 mb-4 border rounded-xl p-4 bg-gray-50">
             <h3 className="text-lg font-medium">Customer Details</h3>
             <div className="flex align-center justify-between">
-              <p>
-                <strong>Name:</strong> {selectedCustomer.name}
-              </p>
-              <p>
-                <strong>Mobile:</strong> {selectedCustomer.mobile}
-              </p>
-              <p>
-                <strong>City:</strong> {selectedCustomer.city}
-              </p>
+              <p><strong>Name:</strong> {selectedCustomer.name}</p>
+              <p><strong>Mobile:</strong> {selectedCustomer.mobile}</p>
+              <p><strong>City:</strong> {selectedCustomer.city}</p>
               <p>
                 <strong>DOB:</strong>{" "}
                 {selectedCustomer.DOB
@@ -288,10 +256,9 @@ export default function OrderDetails() {
           </div>
         )}
 
-        {/* Card */}
+        {/* Order Details */}
         <div className="shadow-sm border rounded-xl bg-white">
           <form onSubmit={handleSubmit} className="p-5">
-            {/* Header */}
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-gray-800 font-medium flex items-center space-x-2">
                 <Package size={18} className="text-gray-700" />
@@ -299,9 +266,7 @@ export default function OrderDetails() {
               </h2>
             </div>
 
-            {/* Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {/* Order ID */}
               <div>
                 <label className="text-sm text-gray-500">Order ID</label>
                 <input
@@ -311,8 +276,6 @@ export default function OrderDetails() {
                   className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm h-[38px]"
                 />
               </div>
-
-              {/* Garment Type */}
               <div>
                 <label className="text-sm text-gray-500">Garment Type</label>
                 <select
@@ -330,8 +293,6 @@ export default function OrderDetails() {
                   <option value="Formal Shirt">Formal Shirt</option>
                 </select>
               </div>
-
-              {/* Order Status */}
               <div>
                 <label className="text-sm text-gray-500">Order Status</label>
                 <select
@@ -346,9 +307,7 @@ export default function OrderDetails() {
               </div>
             </div>
 
-            {/* Second Row */}
             <div className="grid grid-cols-2 gap-4 mt-4">
-              {/* Order Date */}
               <div>
                 <label className="text-sm text-gray-500">Order Date</label>
                 <input
@@ -359,8 +318,6 @@ export default function OrderDetails() {
                   required
                 />
               </div>
-
-              {/* Due Date */}
               <div>
                 <label className="text-sm text-gray-500">Due Date</label>
                 <input
@@ -373,7 +330,6 @@ export default function OrderDetails() {
               </div>
             </div>
 
-            {/* Notes */}
             <div className="mt-4">
               <label className="text-sm text-gray-500">Notes</label>
               <textarea
@@ -386,10 +342,9 @@ export default function OrderDetails() {
           </form>
         </div>
 
-        <div className="bg-[#f5f9ff] min-h-screen py-6 px-4 font-sans">
-          {/* Main Container */}
+        {/* Measurement Section */}
+        <div className="bg-[#f5f9ff] py-6 px-4 font-sans">
           <div className="shadow-md border rounded-xl bg-white p-5">
-            {/* Header */}
             <div className="flex items-center border-b pb-3 mb-4">
               <SlidersHorizontal size={18} className="text-gray-700 mr-2" />
               <h2 className="text-gray-800 font-semibold text-base">
@@ -398,74 +353,53 @@ export default function OrderDetails() {
             </div>
 
             <div>
-              {/* Left Section */}
-              <div className="md:col-span-2">
-                {/* Tabs */}
-                <div className="flex justify-center items-center space-x-2 mb-3">
-                  {["Shirt", "Pant"].map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={`px-3 py-1.5 rounded-md text-sm font-medium ${
-                        activeTab === tab
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              <div className="flex justify-center items-center space-x-2 mb-3">
+                {["Shirt", "Pant"].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium ${activeTab === tab
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-                <hr className="mb-4" />
-
-                {/* Measurements Form */}
-                <div className="space-y-3">
-                  {(activeTab === "Shirt" ? shirtData : pantData).map(
-                    (row, idx) => (
-                      <div key={idx} className="flex-column justify-evenly grid grid-cols-2 gap-2">
-                        <label className="text-sm font-medium text-gray-600 flex items-center">
-                          {row.field}
-                        </label>
-                        <input
-                          type="text"
-                          value={row.value}
-                          onChange={(e) =>
-                            handleChange(activeTab, idx, e.target.value)
-                          }
-                          className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        />
-                      </div>
-                    )
-                  )}
-                </div>
-        {/* Save Button Section */}
-        <div className="mt-6 flex justify-center pb-6">
-          <button
-            onClick={handleSubmit}
-            className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-md"
-          >
-            <Save size={20} />
-            <span className="font-medium">Save Order</span>
-          </button>
-        </div>
-      </div>
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+              <hr className="mb-4" />
+              <div className="space-y-3">
+                {(activeTab === "Shirt" ? shirtData : pantData).map(
+                  (row, idx) => (
+                    <div key={idx} className="grid grid-cols-2 gap-2">
+                      <label className="text-sm font-medium text-gray-600 flex items-center">
+                        {row.field}
+                      </label>
+                      <input
+                        type="text"
+                        value={row.value}
+                        onChange={(e) =>
+                          handleChange(activeTab, idx, e.target.value)
+                        }
+                        className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  )
+                )}
+              </div>
+              <div className="mt-6 flex justify-center pb-6">
+                <button
+                  onClick={handleSubmit}
+                  className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-md"
+                >
+                  <Save size={20} />
+                  <span className="font-medium">Save Order</span>
+                </button>
               </div>
             </div>
           </div>
-          <input
-            type="text"
-            placeholder="Enter Full City Name to search"
-            className="px-3 py-1 border rounded-xl text-sm"
-            value={cityFilter}
-            onChange={(e) => setCityFilter(e.target.value)}
-          />
-          {/* <input
-            type="date"
-            className="px-3 py-1 border rounded-xl text-sm"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-          /> */}
         </div>
+      </div>
 
       {/* Add Customer Modal */}
       {isAddModalOpen && (
