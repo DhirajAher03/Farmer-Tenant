@@ -22,17 +22,44 @@ const Sidebar = () => {
   };
 
   // Menu items config
-const menuItems = [
-  { to: "/layout/dashboard", label: "Dashboard", icon: <BsGridFill className="mr-3 text-lg" /> },
-  { to: "/layout/customers", label: "Customers", icon: <FaUserFriends className="mr-3 text-lg" /> },
- { to: "/layout/measurements", label: "Measurements", icon: <FaRuler className="mr-3 text-lg" /> },
-{ to: "/layout/orders", label: "Orders", icon: <AiOutlineShoppingCart className="mr-3 text-lg" /> },
+  const menuItems = [
+    {
+      to: "/layout/dashboard",
+      label: "Dashboard",
+      icon: <BsGridFill className="mr-3 text-lg" />,
+    },
+    {
+      to: "/layout/customers",
+      label: "Customers",
+      icon: <FaUserFriends className="mr-3 text-lg" />,
+    },
+    {
+      to: "/layout/orders",
+      label: "Measurements",
+      icon: <FaRuler className="mr-3 text-lg" />,
+    },
+    {
+      to: "/layout/measurements",
+      label: "Orders",
+      icon: <AiOutlineShoppingCart className="mr-3 text-lg" />,
+    },
 
-  { to: "/layout/messaging", label: "Messaging", icon: <TbMessage className="mr-3 text-lg" /> },
-  { to: "/layout/reports", label: "Reports", icon: <TbReport className="mr-3 text-lg" /> },
-  { to: "/layout/settings", label: "Settings", icon: <FiSettings className="mr-3 text-lg" /> },
-];
-
+    {
+      to: "/layout/messaging",
+      label: "Messaging",
+      icon: <TbMessage className="mr-3 text-lg" />,
+    },
+    {
+      to: "/layout/reports",
+      label: "Reports",
+      icon: <TbReport className="mr-3 text-lg" />,
+    },
+    {
+      to: "/layout/settings",
+      label: "Settings",
+      icon: <FiSettings className="mr-3 text-lg" />,
+    },
+  ];
 
   const renderSidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -59,7 +86,9 @@ const menuItems = [
       {/* Menu */}
       <nav className="flex flex-col gap-1 flex-grow px-2">
         {menuItems.map((item) => {
-          const isActive = location.pathname === item.to || (item.to === "/dashboard" && location.pathname === "/");
+          const isActive =
+            location.pathname === item.to ||
+            (item.to === "/dashboard" && location.pathname === "/");
           return (
             <Link
               key={item.to}
@@ -111,7 +140,9 @@ const menuItems = [
 
       {/* Mobile Sidebar */}
       <div
-        className={`fixed inset-0 z-50 md:hidden ${show ? "block" : "hidden"} bg-black bg-opacity-40`}
+        className={`fixed inset-0 z-50 md:hidden ${
+          show ? "block" : "hidden"
+        } bg-black bg-opacity-40`}
         onClick={closeSidebar}
       >
         <div

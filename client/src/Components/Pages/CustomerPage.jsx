@@ -34,9 +34,62 @@ const CustomersPage = () => {
       const ordersRes = await API.get(`/customers/${customer._id}/orders`);
       setCustomerOrders(ordersRes.data || []);
 
-      // Fetch customer measurements
-      const measRes = await API.get(`/customers/${customer._id}/measurements`);
-      setCustomerMeasurements(measRes.data || []);
+      // Extract measurements from the latest order
+      if (ordersRes.data && ordersRes.data.length > 0) {
+        const latestOrder = ordersRes.data[0]; // Assuming orders are sorted by date
+        const measurements = [];
+
+        if (latestOrder.measurements) {
+          // Add shirt measurements
+          if (latestOrder.measurements.shirt && Array.isArray(latestOrder.measurements.shirt)) {
+            latestOrder.measurements.shirt.forEach(m => {
+              // Skip empty or invalid values
+              if (!m.field || !m.value) return;
+
+              let displayField = m.field;
+              if (m.field === 'Style') {
+                displayField = 'Shirt Style';
+              } else {
+                displayField = `Shirt ${m.field}`;
+              }
+
+              measurements.push({
+                field: displayField,
+                value: m.value,
+                unit: m.field === 'Style' || m.field === 'Notes' ? '' : 'inches',
+                notes: ''
+              });
+            });
+          }
+
+          // Add pant measurements
+          if (latestOrder.measurements.pant && Array.isArray(latestOrder.measurements.pant)) {
+            latestOrder.measurements.pant.forEach(m => {
+              // Skip empty or invalid values
+              if (!m.field || !m.value) return;
+
+              let displayField = m.field;
+              if (m.field === 'Style') {
+                displayField = 'Pant Style';
+              } else {
+                displayField = `Pant ${m.field}`;
+              }
+
+              measurements.push({
+                field: displayField,
+                value: m.value,
+                unit: m.field === 'Style' || m.field === 'Notes' ? '' : 'inches',
+                notes: ''
+              });
+            });
+          }
+        }
+
+        console.log('Measurements found:', measurements); // Debug log
+        setCustomerMeasurements(measurements);
+      } else {
+        setCustomerMeasurements([]);
+      }
     } catch (error) {
       console.error("Error fetching related data:", error);
       setCustomerOrders([]);
@@ -126,7 +179,7 @@ const CustomersPage = () => {
     const matchesCity = cityFilter ? c.city === cityFilter : true;
     const matchesDate = dateFilter
       ? c.orderDate &&
-        new Date(c.orderDate).toISOString().split("T")[0] === dateFilter
+      new Date(c.orderDate).toISOString().split("T")[0] === dateFilter
       : true;
     return matchesSearch && matchesCity && matchesDate;
   });
@@ -250,17 +303,16 @@ const CustomersPage = () => {
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
-                      className={`px-3 py-1 rounded-lg text-sm mb-2 w-full text-left ${
-                        activeTab === tab
-                          ? "bg-blue-600 text-white"
-                          : "bg-white border"
-                      }`}
+                      className={`px-3 py-1 rounded-lg text-sm mb-2 w-full text-left ${activeTab === tab
+                        ? "bg-blue-600 text-white"
+                        : "bg-white border"
+                        }`}
                     >
                       {tab === "orders"
                         ? "Order History"
                         : tab === "measurements"
-                        ? "Measurements"
-                        : "Messages"}
+                          ? "Measurements"
+                          : "Messages"}
                     </button>
                   ))}
 
@@ -303,32 +355,65 @@ const CustomersPage = () => {
                       <div>
                         <h4 className="font-semibold mb-2">Measurements</h4>
                         {customerMeasurements.length > 0 ? (
-                          <table className="w-full text-sm border">
-                            <thead>
-                              <tr className="bg-gray-100">
-                                <th className="px-2 py-1 border">Field</th>
-                                <th className="px-2 py-1 border">Value</th>
-                                <th className="px-2 py-1 border">Unit</th>
-                                <th className="px-2 py-1 border">Notes</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {customerMeasurements.map((m, idx) => (
-                                <tr key={idx}>
-                                  <td className="border px-2 py-1">
-                                    {m.field}
-                                  </td>
-                                  <td className="border px-2 py-1">
-                                    {m.value}
-                                  </td>
-                                  <td className="border px-2 py-1">{m.unit}</td>
-                                  <td className="border px-2 py-1">
-                                    {m.notes}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                          <div className="space-y-4">
+                            {/* Shirt Measurements */}
+                            <div>
+                              <h5 className="font-medium text-blue-600 mb-2">Shirt Measurements</h5>
+                              <table className="w-full text-sm border bg-white">
+                                <thead>
+                                  <tr className="bg-gray-50">
+                                    <th className="px-2 py-1 border text-left">Measurement</th>
+                                    <th className="px-2 py-1 border text-left">Value</th>
+                                    <th className="px-2 py-1 border text-left">Unit</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {customerMeasurements
+                                    .filter(m => m.field.startsWith('Shirt'))
+                                    .map((m, idx) => (
+                                      <tr key={idx}>
+                                        <td className="border px-2 py-1">
+                                          {m.field.replace('Shirt ', '')}
+                                        </td>
+                                        <td className="border px-2 py-1">
+                                          {m.value}
+                                        </td>
+                                        <td className="border px-2 py-1">{m.unit}</td>
+                                      </tr>
+                                    ))}
+                                </tbody>
+                              </table>
+                            </div>
+
+                            {/* Pant Measurements */}
+                            <div>
+                              <h5 className="font-medium text-blue-600 mb-2">Pant Measurements</h5>
+                              <table className="w-full text-sm border bg-white">
+                                <thead>
+                                  <tr className="bg-gray-50">
+                                    <th className="px-2 py-1 border text-left">Measurement</th>
+                                    <th className="px-2 py-1 border text-left">Value</th>
+                                    <th className="px-2 py-1 border text-left">Unit</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {customerMeasurements
+                                    .filter(m => m.field.startsWith('Pant'))
+                                    .map((m, idx) => (
+                                      <tr key={idx}>
+                                        <td className="border px-2 py-1">
+                                          {m.field.replace('Pant ', '')}
+                                        </td>
+                                        <td className="border px-2 py-1">
+                                          {m.value}
+                                        </td>
+                                        <td className="border px-2 py-1">{m.unit}</td>
+                                      </tr>
+                                    ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
                         ) : (
                           <p className="text-sm text-gray-500">
                             No measurements found.

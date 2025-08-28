@@ -5,11 +5,20 @@ import { useState, useEffect } from "react";
 import API from "../../api/axios";
 
 export default function OrderDetails() {
+  // Form states
   const [customers, setCustomers] = useState([]);
   const [query, setQuery] = useState("");
   const [filtered, setFiltered] = useState([]);
   const [notFound, setNotFound] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [cityFilter, setCityFilter] = useState("");
+
+  // Loading states
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Error state
+  const [error, setError] = useState(null);
 
   const [orderId, setOrderId] = useState("");
   const [garmentType, setGarmentType] = useState("");
@@ -17,28 +26,75 @@ export default function OrderDetails() {
   const [orderDate, setOrderDate] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
+  const [shirtStyle, setShirtStyle] = useState("Short Shirt");
+
+  useEffect(() => {
+    if (query.trim().length > 0 || cityFilter.trim().length > 0) {
+      const matches = customers.filter((c) => {
+        const matchesName = c.name.toLowerCase().includes(query.toLowerCase());
+        const matchesCity = cityFilter
+          ? c.city.toLowerCase().includes(cityFilter.toLowerCase())
+          : true;
+        return matchesName && matchesCity;
+      });
+      setFiltered(matches);
+      setNotFound(matches.length === 0);
+    } else {
+      setFiltered([]);
+      setNotFound(false);
+    }
+  }, [query, cityFilter, customers]);
+
+  useEffect(() => {
+    // Generate unique order ID from backend when component mounts
+    const fetchOrderId = async () => {
+      try {
+        const res = await API.get("/orders/new"); // Change the endpoint to a new one that generates order ID
+        setOrderId(res.data.orderId);
+      } catch (err) {
+        console.error("Error fetching Order ID:", err);
+      }
+    };
+    fetchOrderId();
+
+    // default current date for order date
+    const today = new Date().toISOString().split("T")[0];
+    setOrderDate(today);
+  }, []);
+
 
   const [activeTab, setActiveTab] = useState("Shirt");
 
   const shirtFields = [
+    {
+      field: "Style",
+      value: "",
+      type: "select",
+      options: ["Regular", "Slim Fit", "Loose"]
+    },
     { field: "Height", value: "" },
     { field: "Chest", value: "" },
     { field: "Stomach", value: "" },
     { field: "Sheet", value: "" },
     { field: "Sleeves", value: "" },
-    { field: "Shoulder", value: "" },
+    { field: "Shoulders", value: "" },
     { field: "Collar", value: "" },
   ];
 
   const pantFields = [
-    { field: "Style", value: "", type: "select", options: ["Pleated", "Formal"] },
+    {
+      field: "Style",
+      value: "",
+      type: "select",
+      options: ["Pleated", "Flat Front", "Regular"],
+    },
     { field: "Height", value: "" },
     { field: "Waist", value: "" },
     { field: "Sheet", value: "" },
-    { field: "Thighs", value: "" },
+    { field: "Thigh", value: "" },
     { field: "Knee", value: "" },
     { field: "Bottom", value: "" },
-    { field: "Length", value: "" },
+    { field: "Long", value: "" }
   ];
 
   const [shirtData, setShirtData] = useState(shirtFields);
@@ -52,45 +108,21 @@ export default function OrderDetails() {
     DOB: "",
   });
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
-
   const fetchCustomers = async () => {
     try {
+      setIsLoading(true);
       const res = await API.get("/customers");
       setCustomers(res.data);
     } catch (error) {
       console.error("Error fetching customers:", error);
+      setError("Failed to fetch customers. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (query.trim().length > 0) {
-      const matches = customers.filter((c) =>
-        c.name.toLowerCase().includes(query.toLowerCase())
-      );
-      setFiltered(matches);
-      setNotFound(matches.length === 0);
-    } else {
-      setFiltered([]);
-      setNotFound(false);
-    }
-  }, [query, customers]);
-
-  useEffect(() => {
-    const fetchOrderId = async () => {
-      try {
-        const res = await API.get("/orders/new");
-        setOrderId(res.data.orderId);
-      } catch (err) {
-        console.error("Error fetching Order ID:", err);
-      }
-    };
-    fetchOrderId();
-
-    const today = new Date().toISOString().split("T")[0];
-    setOrderDate(today);
+    fetchCustomers();
   }, []);
 
   const handleChange = (tab, idx, val) => {
@@ -107,30 +139,39 @@ export default function OrderDetails() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
 
+    // Validate required fields
     if (!selectedCustomer) {
-      alert("Please select a customer!");
+      setError("Please select a customer!");
       return;
     }
 
     if (!garmentType) {
-      alert("Please enter garment type!");
+      setError("Please select a garment type!");
       return;
     }
 
     if (dueDate && new Date(dueDate) < new Date()) {
-      alert("Due date cannot be before today!");
+      setError("Due date cannot be before today!");
       return;
     }
 
+    // Validate measurements
+    if (!validateMeasurements()) {
+      return;
+    }
+
+    setIsSaving(true);
+
     const measurementsData = {
-      shirt: shirtData.map(item => ({
+      shirt: shirtData.map((item) => ({
         field: item.field,
-        value: item.value
+        value: item.value || "0",
       })),
-      pant: pantData.map(item => ({
+      pant: pantData.map((item) => ({
         field: item.field,
-        value: item.value
+        value: item.value || "0",
       }))
     };
 
@@ -143,34 +184,128 @@ export default function OrderDetails() {
         orderDate,
         dueDate,
         notes,
-        measurements: measurementsData
+        measurements: measurementsData,
       });
 
       if (response.data) {
+        // Show success message
         alert("Order created successfully!");
-        setGarmentType("");
-        setNotes("");
-        setDueDate("");
-        setSelectedCustomer(null);
-        setQuery("");
-        setShirtData(shirtFields);
-        setPantData(pantFields);
+
+        // Print receipt
+        const printWindow = window.open('', '', 'width=800,height=600');
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>Order Receipt</title>
+              <style>
+                body { font-family: Arial, sans-serif; padding: 20px; }
+                .header { text-align: center; margin-bottom: 20px; }
+                .details { margin-bottom: 20px; }
+                .measurements { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+                .section { border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; }
+                .field { margin: 5px 0; }
+              </style>
+            </head>
+            <body>
+              <div class="header">
+                <h1>Order Receipt</h1>
+                <p>Order ID: ${orderId}</p>
+              </div>
+              <div class="details">
+                <h2>Customer Details</h2>
+                <p>Name: ${selectedCustomer.name}</p>
+                <p>Mobile: ${selectedCustomer.mobile}</p>
+                <p>City: ${selectedCustomer.city}</p>
+              </div>
+              <div class="details">
+                <h2>Order Details</h2>
+                <p>Garment Type: ${garmentType}</p>
+                <p>Order Date: ${orderDate}</p>
+                <p>Due Date: ${dueDate || 'Not specified'}</p>
+                <p>Status: ${status}</p>
+                <p>Notes: ${notes || 'No notes'}</p>
+              </div>
+              <div class="measurements">
+                <div class="section">
+                  <h2>Shirt Measurements</h2>
+                  <p>Style: ${shirtStyle}</p>
+                  ${shirtData.map(item =>
+          `<div class="field">${item.field}: ${item.value || '0'}</div>`
+        ).join('')}
+                </div>
+                <div class="section">
+                  <h2>Pant Measurements</h2>
+                  ${pantData.map(item =>
+          `<div class="field">${item.field}: ${item.value || '0'}</div>`
+        ).join('')}
+                </div>
+              </div>
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+
+        // Reset form
+        resetForm();
+
+        // Generate new order ID for next order
+        fetchOrderId();
       }
     } catch (err) {
       console.error("Error creating order:", err);
     }
   };
 
+  // Measurement handling functions have been moved up
+
+  // handleSave is now integrated into handleSubmit
   const handleAddCustomer = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       const res = await API.post("/customers", newCustomer);
       setCustomers([...customers, res.data]);
       setIsAddModalOpen(false);
       setNewCustomer({ name: "", mobile: "", city: "", DOB: "" });
+      // Select the newly added customer
+      setSelectedCustomer(res.data);
+      setQuery(res.data.name);
     } catch (error) {
       console.error("Error adding customer:", error);
+      setError("Failed to add customer. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  // Reset form function
+  const resetForm = () => {
+    setGarmentType("");
+    setNotes("");
+    setDueDate("");
+    setSelectedCustomer(null);
+    setQuery("");
+    setCityFilter("");
+    setShirtData(shirtFields);
+    setPantData(pantFields);
+    setError(null);
+    setShirtStyle("Short Shirt");
+    setIsSaving(false);
+  };
+
+  // Validate measurements
+  const validateMeasurements = () => {
+    const activeMeasurements = garmentType.toLowerCase().includes('pant') ? pantData
+      : garmentType.toLowerCase().includes('shirt') ? shirtData
+        : [...shirtData, ...pantData];
+
+    const hasEmptyFields = activeMeasurements.some(m => !m.value.trim());
+    if (hasEmptyFields) {
+      setError("Please fill in all measurement fields");
+      return false;
+    }
+    return true;
   };
 
   return (
@@ -353,40 +488,88 @@ export default function OrderDetails() {
             </div>
 
             <div>
-              <div className="flex justify-center items-center space-x-2 mb-3">
-                {["Shirt", "Pant"].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium ${activeTab === tab
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
-              <hr className="mb-4" />
-              <div className="space-y-3">
-                {(activeTab === "Shirt" ? shirtData : pantData).map(
-                  (row, idx) => (
-                    <div key={idx} className="grid grid-cols-2 gap-2">
-                      <label className="text-sm font-medium text-gray-600 flex items-center">
-                        {row.field}
-                      </label>
-                      <input
-                        type="text"
-                        value={row.value}
-                        onChange={(e) =>
-                          handleChange(activeTab, idx, e.target.value)
-                        }
-                        className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                      />
+              {/* Two Column Layout for Measurements */}
+              <div className="grid grid-cols-2 gap-6">
+                {/* Shirt Section */}
+                <div className="border rounded-lg p-4">
+                  <h3 className="text-lg font-medium mb-4">Shirt Measurements</h3>
+
+                  {/* Shirt Style Select */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-600 mb-2">Style:</label>
+                    <select
+                      value={shirtData[0].value}
+                      onChange={(e) => handleChange("Shirt", 0, e.target.value)}
+                      className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+                    >
+                      <option value="">Select Style</option>
+                      {shirtFields[0].options.map((style) => (
+                        <option key={style} value={style}>
+                          {style}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-3">
+                    {shirtData.map((row, idx) => (
+                      <div key={idx} className="grid grid-cols-2 gap-2">
+                        <label className="text-sm font-medium text-gray-600 flex items-center">
+                          {row.field}
+                        </label>
+                        <input
+                          type="text"
+                          value={row.value}
+                          onChange={(e) => handleChange("Shirt", idx, e.target.value)}
+                          className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Pant Section */}
+                <div className="border rounded-lg p-4">
+                  <h3 className="text-lg font-medium mb-4">Pant Measurements</h3>
+
+                  {/* Pant Style Radio Buttons */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-600 mb-2">Style:</label>
+                    <div className="flex space-x-4">
+                      {['Pleated', 'Formal'].map((style) => (
+                        <label key={style} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="pantStyle"
+                            value={style}
+                            onChange={(e) => handleChange("Pant", 0, e.target.value)}
+                            checked={pantData[0].value === style}
+                            className="mr-2"
+                          />
+                          <span className="text-sm">{style}</span>
+                        </label>
+                      ))}
                     </div>
-                  )
-                )}
+                  </div>
+
+                  <div className="space-y-3">
+                    {pantData.slice(1).map((row, idx) => (
+                      <div key={idx} className="grid grid-cols-2 gap-2">
+                        <label className="text-sm font-medium text-gray-600 flex items-center">
+                          {row.field}
+                        </label>
+                        <input
+                          type="text"
+                          value={row.value}
+                          onChange={(e) => handleChange("Pant", idx + 1, e.target.value)}
+                          className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
+              {/* Save Button Section */}
               <div className="mt-6 flex justify-center pb-6">
                 <button
                   onClick={handleSubmit}
@@ -400,85 +583,95 @@ export default function OrderDetails() {
           </div>
         </div>
       </div>
+      <input
+        type="text"
+        placeholder="Enter Full City Name to search"
+        className="px-3 py-1 border rounded-xl text-sm"
+        value={cityFilter}
+        onChange={(e) => setCityFilter(e.target.value)}
+      />
+
 
       {/* Add Customer Modal */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4 text-center">Add Customer</h2>
-            <form onSubmit={handleAddCustomer} className="space-y-4">
-              <div>
-                <label className="block font-medium mb-1">Customer Name</label>
-                <input
-                  type="text"
-                  value={newCustomer.name}
-                  onChange={(e) =>
-                    setNewCustomer({ ...newCustomer, name: e.target.value })
-                  }
-                  className="w-full border rounded-lg px-3 py-2"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block font-medium mb-1">Mobile</label>
-                <input
-                  type="text"
-                  value={newCustomer.mobile}
-                  onChange={(e) =>
-                    setNewCustomer({ ...newCustomer, mobile: e.target.value })
-                  }
-                  className="w-full border rounded-lg px-3 py-2"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block font-medium mb-1">City</label>
-                <input
-                  type="text"
-                  value={newCustomer.city}
-                  onChange={(e) =>
-                    setNewCustomer({ ...newCustomer, city: e.target.value })
-                  }
-                  className="w-full border rounded-lg px-3 py-2"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block font-medium mb-1">
-                  DOB (dd/mm/yyyy)
-                </label>
-                <input
-                  type="date"
-                  value={newCustomer.DOB}
-                  onChange={(e) =>
-                    setNewCustomer({
-                      ...newCustomer,
-                      DOB: e.target.value,
-                    })
-                  }
-                  className="w-full border rounded-lg px-3 py-2"
-                  required
-                />
-              </div>
-              <div className="flex justify-end gap-3 mt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 bg-gray-300 rounded-xl hover:bg-gray-400"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
-                >
-                  Add Customer
-                </button>
-              </div>
-            </form>
+      {
+        isAddModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl shadow-lg p-6 w-full max-w-md">
+              <h2 className="text-xl font-bold mb-4 text-center">Add Customer</h2>
+              <form onSubmit={handleAddCustomer} className="space-y-4">
+                <div>
+                  <label className="block font-medium mb-1">Customer Name</label>
+                  <input
+                    type="text"
+                    value={newCustomer.name}
+                    onChange={(e) =>
+                      setNewCustomer({ ...newCustomer, name: e.target.value })
+                    }
+                    className="w-full border rounded-lg px-3 py-2"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block font-medium mb-1">Mobile</label>
+                  <input
+                    type="text"
+                    value={newCustomer.mobile}
+                    onChange={(e) =>
+                      setNewCustomer({ ...newCustomer, mobile: e.target.value })
+                    }
+                    className="w-full border rounded-lg px-3 py-2"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block font-medium mb-1">City</label>
+                  <input
+                    type="text"
+                    value={newCustomer.city}
+                    onChange={(e) =>
+                      setNewCustomer({ ...newCustomer, city: e.target.value })
+                    }
+                    className="w-full border rounded-lg px-3 py-2"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block font-medium mb-1">
+                    DOB (dd/mm/yyyy)
+                  </label>
+                  <input
+                    type="date"
+                    value={newCustomer.DOB}
+                    onChange={(e) =>
+                      setNewCustomer({
+                        ...newCustomer,
+                        DOB: e.target.value,
+                      })
+                    }
+                    className="w-full border rounded-lg px-3 py-2"
+                    required
+                  />
+                </div>
+                <div className="flex justify-end gap-3 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddModalOpen(false)}
+                    className="px-4 py-2 bg-gray-300 rounded-xl hover:bg-gray-400"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
+                  >
+                    Add Customer
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
     </>
   );
-};
+}

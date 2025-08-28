@@ -1,171 +1,228 @@
-// Currently this file is not in use 
-// add this file code into (./OrderPage.jsx)
-import { Search, SlidersHorizontal, Edit, Plus, Save, Copy, PlusCircle } from "lucide-react";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { FiSearch, FiTrash2 } from "react-icons/fi";
+import API from "../../api/axios.js";
 
-export default function MeasurementEntry() {
-  const [fields, setFields] = useState([
-    { field: "Chest", value: "40", unit: "in", notes: "Snug fit" },
-    { field: "Waist", value: "34", unit: "in", notes: "After lunch +0.5" },
-    { field: "Hips", value: "38", unit: "in", notes: "—" },
-    { field: "Shoulder", value: "18", unit: "in", notes: "Natural slope" },
-    { field: "Sleeve Length", value: "24.5", unit: "in", notes: "Include cuff" },
-    { field: "Jacket Length", value: "29", unit: "in", notes: "Classic length" },
-  ]);
+const OrderPage = () => {
+  const [customers, setCustomers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [cityFilter, setCityFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [activeTab, setActiveTab] = useState("orders"); // ✅ Tabs inside accordion
 
-  const [orderItems, setOrderItems] = useState([
-    { item: "Two-piece Suit", qty: "1" },
-    { item: "Extra Pants", qty: "1" },
-  ]);
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
+  const fetchCustomers = async () => {
+    try {
+      const res = await API.get("/customers");
+      setCustomers(res.data);
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+    }
+  };
+
+  const handleDeleteCustomer = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this customer?")) return;
+    try {
+      await API.delete(`/customers/${id}`);
+      setCustomers(customers.filter((c) => c._id !== id));
+      if (selectedCustomer && selectedCustomer._id === id) {
+        setSelectedCustomer(null);
+      }
+    } catch (error) {
+      console.error("Error deleting customer:", error);
+    }
+  };
+
+  const filteredCustomers = customers.filter((c) => {
+    const matchesSearch =
+      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.mobile.includes(searchQuery);
+    const matchesCity = cityFilter ? c.city === cityFilter : true;
+    const matchesDate = dateFilter
+      ? c.orderDate &&
+        new Date(c.orderDate).toISOString().split("T")[0] === dateFilter
+      : true;
+    return matchesSearch && matchesCity && matchesDate;
+  });
 
   return (
-    <div className="bg-[#f5f9ff] min-h-screen py-6 px-4 font-sans">
-      {/* Main Container */}
-      <div className="shadow-md border rounded-xl bg-white p-5">
-        {/* Header */}
-        <div className="flex items-center border-b pb-3 mb-4">
-          <SlidersHorizontal size={18} className="text-gray-700 mr-2" />
-          <h2 className="text-gray-800 font-semibold text-base">Measurement Entry</h2>
+    <div className="w-full min-h-screen p-6" style={{ backgroundColor: "#f5f9ff" }}>
+      <h2 className="text-xl font-semibold mb-4">Customer Orders</h2>
+
+      {/* ✅ Filters */}
+      <div className="flex gap-3 mb-4">
+        <div className="flex items-center border rounded-xl px-4 py-2 text-gray-500 bg-white shadow-sm w-64">
+          <FiSearch className="mr-2" />
+          <input
+            type="text"
+            placeholder="Search customers"
+            className="outline-none text-sm w-full"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Left Section */}
-          <div className="md:col-span-2">
-            {/* Table Header */}
-            <div className="grid grid-cols-4 gap-2 mb-2 text-sm font-medium text-gray-600">
-              <div>Field</div>
-              <div>Value</div>
-              <div>Unit</div>
-              <div>Notes</div>
-            </div>
-
-            {/* Dynamic Rows */}
-            {fields.map((row, idx) => (
-              <div key={idx} className="grid grid-cols-4 gap-2 mb-2">
-                <div className="flex items-center text-sm text-gray-800">{row.field}</div>
-                <input
-                  type="text"
-                  defaultValue={row.value}
-                  className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-                <input
-                  type="text"
-                  defaultValue={row.unit}
-                  className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-                <input
-                  type="text"
-                  defaultValue={row.notes}
-                  className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-            ))}
-
-            {/* Extra Fields */}
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <div>
-                <label className="text-sm text-gray-600">Fitting Preference</label>
-                <input
-                  type="text"
-                  defaultValue="Tailored Fit"
-                  className="mt-1 w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-gray-600">Posture</label>
-                <input
-                  type="text"
-                  defaultValue="Normal"
-                  className="mt-1 w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <label className="text-sm text-gray-600">Special Instructions</label>
-              <textarea
-                className="mt-1 w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-sm h-[70px] focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
-
-            {/* Footer Buttons */}
-            <div className="flex items-center gap-3 mt-4">
-              <button className="flex items-center space-x-1 rounded-md border px-3 py-1.5 text-gray-700 bg-white hover:bg-gray-100 shadow-sm text-sm">
-                <PlusCircle size={16} />
-                <span>Add Field</span>
-              </button>
-              <button className="flex items-center space-x-1 rounded-md border px-3 py-1.5 text-gray-700 bg-white hover:bg-gray-100 shadow-sm text-sm">
-                <Copy size={16} />
-                <span>Duplicate from Shirt</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Right Section */}
-          <div>
-            {/* Tabs */}
-            <div className="flex items-center space-x-2 mb-3">
-              {["Suits", "Shirts", "Trousers", "Others"].map((tab, idx) => (
-                <button
-                  key={idx}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium ${
-                    tab === "Suits"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-
-            {/* Search & Presets */}
-            <div className="flex items-center space-x-2 mb-3">
-              <button className="flex items-center space-x-1 flex-1 rounded-md border px-2 py-1.5 text-sm text-gray-600 bg-gray-50 hover:bg-gray-100">
-                <Search size={16} />
-                <span>Search fields</span>
-              </button>
-              <button className="flex items-center space-x-1 rounded-md border px-2 py-1.5 text-sm text-gray-600 bg-gray-50 hover:bg-gray-100">
-                <SlidersHorizontal size={16} />
-                <span>Presets</span>
-              </button>
-            </div>
-
-            {/* Items Table */}
-            <div className="border rounded-md overflow-hidden text-sm">
-              {orderItems.map((row, idx) => (
-                <div
-                  key={idx}
-                  className="grid grid-cols-3 items-center border-b last:border-0 px-2 py-2"
-                >
-                  <div>{row.item}</div>
-                  <input
-                    type="text"
-                    defaultValue={row.qty}
-                    className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm w-12 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                  <button className="flex items-center space-x-1 text-blue-600 hover:text-blue-700 text-sm">
-                    <Edit size={16} />
-                    <span>Edit</span>
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center justify-between mt-4">
-              <button className="flex items-center space-x-1 rounded-md border px-3 py-1.5 text-gray-700 bg-white hover:bg-gray-100 shadow-sm text-sm">
-                <Plus size={16} />
-                <span>Add Order Line</span>
-              </button>
-              <button className="flex items-center space-x-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 text-sm">
-                <Save size={16} />
-                <span>Save Order</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <input
+          type="text"
+          placeholder="City"
+          className="px-3 py-1 border rounded-xl text-sm"
+          value={cityFilter}
+          onChange={(e) => setCityFilter(e.target.value)}
+        />
+        <input
+          type="date"
+          className="px-3 py-1 border rounded-xl text-sm"
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value)}
+        />
       </div>
+
+      {/* ✅ Table */}
+      <table className="w-full text-sm border-separate border-spacing-0 rounded-xl overflow-hidden border-2 border-gray-100">
+        <thead>
+          <tr className="bg-white text-gray-600">
+            <th className="text-left py-3 px-3">#</th>
+            <th className="text-left py-3 px-3">Name</th>
+            <th className="text-left py-3 px-3">Mobile</th>
+            <th className="text-left py-3 px-3">City</th>
+            <th className="text-left py-3 px-3">DOB</th>
+            <th className="text-left py-3 px-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredCustomers.map((customer, index) => (
+            <React.Fragment key={customer._id}>
+              <tr className="bg-[#f5f9ff] hover:bg-blue-100">
+                <td className="py-3 px-3">{index + 1}</td>
+                <td className="px-3">{customer.name}</td>
+                <td className="px-3">{customer.mobile}</td>
+                <td className="px-3">{customer.city}</td>
+                <td className="px-3">
+                  {customer.DOB
+                    ? new Date(customer.DOB).toLocaleDateString("en-GB")
+                    : ""}
+                </td>
+                <td className="px-3 flex gap-2">
+                  <button
+                    onClick={() =>
+                      setSelectedCustomer(
+                        selectedCustomer?._id === customer._id ? null : customer
+                      )
+                    }
+                    className="flex items-center gap-1 px-3 py-1 bg-white border rounded-lg hover:bg-gray-100"
+                  >
+                    {selectedCustomer?._id === customer._id ? "Hide" : "View"}
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCustomer(customer._id)}
+                    className="flex items-center gap-1 px-3 py-1 bg-white border rounded-lg hover:bg-red-100 text-red-600"
+                  >
+                    <FiTrash2 /> Delete
+                  </button>
+                </td>
+              </tr>
+
+              {/* ✅ Accordion for Details */}
+              {selectedCustomer?._id === customer._id && (
+                <tr>
+                  <td colSpan="6" className="bg-gray-50 p-4">
+                    <div className="border rounded-xl p-4 bg-white w-full">
+                      {/* ✅ Tabs */}
+                      <div className="flex gap-3 mb-4">
+                        {["orders", "measurements", "messages"].map((tab) => (
+                          <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                              activeTab === tab
+                                ? "bg-blue-600 text-white"
+                                : "bg-gray-100 text-gray-700"
+                            }`}
+                          >
+                            {tab === "orders"
+                              ? "Order Details"
+                              : tab === "measurements"
+                              ? "Measurements"
+                              : "Messages"}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* ✅ Tab Content */}
+                      {activeTab === "orders" && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-gray-500 text-sm">Name</label>
+                            <input
+                              type="text"
+                              value={customer.name}
+                              readOnly
+                              className="w-full border rounded-xl px-3 py-2 bg-gray-100 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-gray-500 text-sm">Mobile</label>
+                            <input
+                              type="text"
+                              value={customer.mobile}
+                              readOnly
+                              className="w-full border rounded-xl px-3 py-2 bg-gray-100 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-gray-500 text-sm">City</label>
+                            <input
+                              type="text"
+                              value={customer.city}
+                              readOnly
+                              className="w-full border rounded-xl px-3 py-2 bg-gray-100 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-gray-500 text-sm">Order Date</label>
+                            <input
+                              type="date"
+                              value={
+                                customer.orderDate
+                                  ? new Date(customer.orderDate)
+                                      .toISOString()
+                                      .split("T")[0]
+                                  : ""
+                              }
+                              readOnly
+                              className="w-full border rounded-xl px-3 py-2 bg-gray-100 text-sm"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {activeTab === "measurements" && (
+                        <div>
+                          <p className="text-gray-600 text-sm">
+                            Measurement details will be shown here.
+                          </p>
+                        </div>
+                      )}
+
+                      {activeTab === "messages" && (
+                        <div>
+                          <p className="text-gray-600 text-sm">
+                            Customer messages will appear here.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </React.Fragment>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
-}
+};
+
+export default OrderPage;
