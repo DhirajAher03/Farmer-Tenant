@@ -12,11 +12,20 @@ import { useState, useEffect } from "react";
 import API from "../../api/axios"; //axios instance
 
 export default function OrderDetails() {
+  // Form states
   const [customers, setCustomers] = useState([]);
   const [query, setQuery] = useState("");
   const [filtered, setFiltered] = useState([]);
   const [notFound, setNotFound] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [cityFilter, setCityFilter] = useState("");
+  
+  // Loading states
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Error state
+  const [error, setError] = useState(null);
 
   const [orderId, setOrderId] = useState("");
   const [garmentType, setGarmentType] = useState("");
@@ -26,17 +35,21 @@ export default function OrderDetails() {
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
-    if (query.trim().length > 0) {
-      const matches = customers.filter((c) =>
-        c.name.toLowerCase().includes(query.toLowerCase())
-      );
+    if (query.trim().length > 0 || cityFilter.trim().length > 0) {
+      const matches = customers.filter((c) => {
+        const matchesName = c.name.toLowerCase().includes(query.toLowerCase());
+        const matchesCity = cityFilter 
+          ? c.city.toLowerCase().includes(cityFilter.toLowerCase())
+          : true;
+        return matchesName && matchesCity;
+      });
       setFiltered(matches);
       setNotFound(matches.length === 0);
     } else {
       setFiltered([]);
       setNotFound(false);
     }
-  }, [query, customers]);
+  }, [query, cityFilter, customers]);
 
   useEffect(() => {
     // Generate unique order ID from backend when component mounts
@@ -57,32 +70,41 @@ export default function OrderDetails() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    setError(null);
+    
+    // Validate required fields
     if (!selectedCustomer) {
-      alert("Please select a customer!");
+      setError("Please select a customer!");
       return;
     }
 
     if (!garmentType) {
-      alert("Please enter garment type!");
+      setError("Please select a garment type!");
       return;
     }
 
     if (dueDate && new Date(dueDate) < new Date()) {
-      alert("Due date cannot be before today!");
+      setError("Due date cannot be before today!");
       return;
     }
 
+    // Validate measurements
+    if (!validateMeasurements()) {
+      return;
+    }
+
+    setIsSaving(true);
+
     // Format measurements data
     const measurementsData = {
-      shirt: shirtData.map(item => ({
+      shirt: shirtData.map((item) => ({
         field: item.field,
-        value: item.value
+        value: item.value,
       })),
-      pant: pantData.map(item => ({
+      pant: pantData.map((item) => ({
         field: item.field,
-        value: item.value
-      }))
+        value: item.value,
+      })),
     };
 
     try {
@@ -94,20 +116,18 @@ export default function OrderDetails() {
         orderDate,
         dueDate,
         notes,
-        measurements: measurementsData
+        measurements: measurementsData,
       });
-      
+
       if (response.data) {
+        // Show success message
         alert("Order created successfully!");
-        // Clear form or redirect to orders list
-        setGarmentType("");
-        setNotes("");
-        setDueDate("");
-        setSelectedCustomer(null);
-        setQuery("");
-        // Reset measurements
-        setShirtData(shirtFields);
-        setPantData(pantFields);
+        
+        // Reset form
+        resetForm();
+        
+        // Generate new order ID for next order
+        fetchOrderId();
       }
     } catch (err) {
       console.error("Error creating order:", err);
@@ -127,7 +147,12 @@ export default function OrderDetails() {
   ];
 
   const pantFields = [
-    { field: "Style", value: "", type: "select", options: ["Pleated", "Formal"] },
+    {
+      field: "Style",
+      value: "",
+      type: "select",
+      options: ["Pleated", "Formal"],
+    },
     { field: "Height", value: "" },
     { field: "Waist", value: "" },
     { field: "Sheet", value: "" },
@@ -181,14 +206,48 @@ export default function OrderDetails() {
   };
   const handleAddCustomer = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       const res = await API.post("/customers", newCustomer);
       setCustomers([...customers, res.data]);
       setIsAddModalOpen(false);
       setNewCustomer({ name: "", mobile: "", city: "", DOB: "" });
+      // Select the newly added customer
+      setSelectedCustomer(res.data);
+      setQuery(res.data.name);
     } catch (error) {
       console.error("Error adding customer:", error);
+      setError("Failed to add customer. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  // Reset form function
+  const resetForm = () => {
+    setGarmentType("");
+    setNotes("");
+    setDueDate("");
+    setSelectedCustomer(null);
+    setQuery("");
+    setCityFilter("");
+    setShirtData(shirtFields);
+    setPantData(pantFields);
+    setError(null);
+  };
+
+  // Validate measurements
+  const validateMeasurements = () => {
+    const activeMeasurements = garmentType.toLowerCase().includes('pant') ? pantData 
+                            : garmentType.toLowerCase().includes('shirt') ? shirtData 
+                            : [...shirtData, ...pantData];
+    
+    const hasEmptyFields = activeMeasurements.some(m => !m.value.trim());
+    if (hasEmptyFields) {
+      setError("Please fill in all measurement fields");
+      return false;
+    }
+    return true;
   };
 
   return (
@@ -422,7 +481,10 @@ export default function OrderDetails() {
                 <div className="space-y-3">
                   {(activeTab === "Shirt" ? shirtData : pantData).map(
                     (row, idx) => (
-                      <div key={idx} className="flex-column justify-evenly grid grid-cols-2 gap-2">
+                      <div
+                        key={idx}
+                        className="flex-column justify-evenly grid grid-cols-2 gap-2"
+                      >
                         <label className="text-sm font-medium text-gray-600 flex items-center">
                           {row.field}
                         </label>
@@ -438,34 +500,34 @@ export default function OrderDetails() {
                     )
                   )}
                 </div>
-        {/* Save Button Section */}
-        <div className="mt-6 flex justify-center pb-6">
-          <button
-            onClick={handleSubmit}
-            className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-md"
-          >
-            <Save size={20} />
-            <span className="font-medium">Save Order</span>
-          </button>
-        </div>
-      </div>
+                {/* Save Button Section */}
+                <div className="mt-6 flex justify-center pb-6">
+                  <button
+                    onClick={handleSubmit}
+                    className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-md"
+                  >
+                    <Save size={20} />
+                    <span className="font-medium">Save Order</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-          <input
-            type="text"
-            placeholder="Enter Full City Name to search"
-            className="px-3 py-1 border rounded-xl text-sm"
-            value={cityFilter}
-            onChange={(e) => setCityFilter(e.target.value)}
-          />
-          {/* <input
+        </div>
+        <input
+          type="text"
+          placeholder="Enter Full City Name to search"
+          className="px-3 py-1 border rounded-xl text-sm"
+          value={cityFilter}
+          onChange={(e) => setCityFilter(e.target.value)}
+        />
+        {/* <input
             type="date"
             className="px-3 py-1 border rounded-xl text-sm"
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
           /> */}
-        </div>
+      </div>
 
       {/* Add Customer Modal */}
       {isAddModalOpen && (
@@ -547,4 +609,4 @@ export default function OrderDetails() {
       )}
     </>
   );
-};
+}
