@@ -1,24 +1,25 @@
 const express = require('express');
-const Order =require('../models/Order')
+const Order = require('../models/Order')
+const Customer = require('../models/Customer')
 const generateOrderId = require('../utils/generateOrderId');
 
 // Add Order 
 const addOrder = async (req, res) => {
   try {
-    const { 
+    const {
       orderId,
-      customerId, 
-      garmentType, 
-      status, 
-      orderDate, 
-      dueDate, 
+      customerId,
+      garmentType,
+      status,
+      orderDate,
+      dueDate,
       notes,
-      measurements 
+      measurements
     } = req.body;
 
     if (!customerId || !orderDate) {
-      return res.status(400).json({ 
-        message: "Required fields missing: customerID and orderDate are required" 
+      return res.status(400).json({
+        message: "Required fields missing: customerID and orderDate are required"
       });
     }
 
@@ -44,7 +45,7 @@ const addOrder = async (req, res) => {
 
 // Get All Orders
 const getOrders = async (req, res) => {
-    try {
+  try {
     const orders = await Order.find({ customerId: req.params.id }).populate("customerId");
     res.json(orders);
   } catch (error) {
@@ -63,6 +64,7 @@ const getNewOrderId = async (req, res) => {
   }
 };
 
+// Get Orders by Customer ID
 const getOrdersByCustomer = async (req, res) => {
   try {
     const orders = await Order.find({ customerId: req.params.id });
@@ -72,6 +74,18 @@ const getOrdersByCustomer = async (req, res) => {
   }
 };
 
+// Get all orders
+const getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find() // sabhi orders fetch honge
+      .populate("customerId")
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get Measurements by Customer ID
 const getMeasurementsByCustomer = async (req, res) => {
   try {
     // Get the latest order with measurements for this customer
@@ -91,4 +105,49 @@ const getMeasurementsByCustomer = async (req, res) => {
   }
 };
 
-module.exports = { addOrder, getOrders, getNewOrderId, getOrdersByCustomer, getMeasurementsByCustomer };
+// Get Order Counts by Status
+const getOrderCounts = async (req, res) => {
+  try {
+    const counts = await Order.aggregate([
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const formattedCounts = {};
+    counts.forEach(item => {
+      formattedCounts[item._id] = item.count;
+    });
+
+    res.status(200).json({
+      success: true,
+      data: formattedCounts
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching order counts",
+      error: error.message
+    });
+  }
+};
+
+// // Delete order by orderId
+// const deleteOrderById = async (req, res) => {
+//   try {
+//     const deletedOrder = await Order.findByIdAndDelete(req.params.id);
+
+//     if (!deletedOrder) {
+//       return res.status(404).json({ message: "Order not found" });
+//     }
+
+//     res.status(200).json({ message: "Order deleted successfully", deletedOrder });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// };
+
+module.exports = { addOrder, getOrders, getNewOrderId, getOrdersByCustomer, getAllOrders, getMeasurementsByCustomer, getOrderCounts, deleteOrderById };

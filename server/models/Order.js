@@ -17,8 +17,7 @@ const orderSchema = new mongoose.Schema({
       sheet: { type: String },
       sleeves: { type: String },
       shoulders: { type: String },
-      collar: { type: String },
-      
+      collar: { type: String }
     },
     pant: {
       style: { type: String, enum: ['Pleated', 'Flat Front', 'Regular'] },
@@ -28,7 +27,7 @@ const orderSchema = new mongoose.Schema({
       thigh: { type: String },
       knee: { type: String },
       bottom: { type: String },
-      long: { type: String },
+      long: { type: String }
     }
   },
   createdAt: { type: Date, default: Date.now }
