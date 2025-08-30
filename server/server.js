@@ -16,6 +16,10 @@ connectDB();
 const authRoutes = require("./routes/authRoutes"); // Your auth routes
 const customerRoutes = require("./routes/customerRoutes");
 const orderRoutes = require("./routes/orderRoute");
+const activityRoutes = require("./routes/activityRoutes"); // Activity routes
+
+// Use Routes
+app.use("/api/activities", activityRoutes); // Activity routes
 
 app.use("/api/auth", authRoutes);
 app.use("/api/customers", customerRoutes);

@@ -49,10 +49,11 @@ const Dashboard = () => {
     const newCustomerId = customersCount + 1;
     setCustomersCount(newCustomerId);
 
-    const newActivity = {
-      message: `✅ Customer Added: Customer ${newCustomerId} (ID: ${newCustomerId})`,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    };
+   const newActivity = {
+  message: `✅ Customer Added: Customer ${newCustomerId} (ID: ${newCustomerId})`,
+  time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+};
+
 
     setActivities((prev) => [newActivity, ...prev].slice(0, 3));
   };

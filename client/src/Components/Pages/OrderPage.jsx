@@ -164,19 +164,32 @@ export default function OrderDetails() {
 
     setIsSaving(true);
 
+    // Convert array of fields to object structure matching backend schema
     const measurementsData = {
-      shirt: shirtData.map((item) => ({
-        field: item.field,
-        value: item.value || "0",
-      })),
-      pant: pantData.map((item) => ({
-        field: item.field,
-        value: item.value || "0",
-      }))
+      shirt: {
+        style: shirtData.find(item => item.field === "Style")?.value || "Regular",
+        height: shirtData.find(item => item.field === "Height")?.value || "",
+        chest: shirtData.find(item => item.field === "Chest")?.value || "",
+        stomach: shirtData.find(item => item.field === "Stomach")?.value || "",
+        sheet: shirtData.find(item => item.field === "Sheet")?.value || "",
+        sleeves: shirtData.find(item => item.field === "Sleeves")?.value || "",
+        shoulders: shirtData.find(item => item.field === "Shoulders")?.value || "",
+        collar: shirtData.find(item => item.field === "Collar")?.value || ""
+      },
+      pant: {
+        style: pantData.find(item => item.field === "Style")?.value || "Regular",
+        height: pantData.find(item => item.field === "Height")?.value || "",
+        waist: pantData.find(item => item.field === "Waist")?.value || "",
+        sheet: pantData.find(item => item.field === "Sheet")?.value || "",
+        thigh: pantData.find(item => item.field === "Thigh")?.value || "",
+        knee: pantData.find(item => item.field === "Knee")?.value || "",
+        bottom: pantData.find(item => item.field === "Bottom")?.value || "",
+        long: pantData.find(item => item.field === "Long")?.value || ""
+      }
     };
 
     try {
-      const response = await API.post("/orders", {
+      const orderData = {
         orderId,
         customerId: selectedCustomer._id,
         garmentType,
@@ -185,7 +198,10 @@ export default function OrderDetails() {
         dueDate,
         notes,
         measurements: measurementsData,
-      });
+      };
+
+      console.log('Sending order data:', orderData);
+      const response = await API.post("/orders", orderData);
 
       if (response.data) {
         // Show success message
@@ -296,15 +312,25 @@ export default function OrderDetails() {
 
   // Validate measurements
   const validateMeasurements = () => {
-    const activeMeasurements = garmentType.toLowerCase().includes('pant') ? pantData
-      : garmentType.toLowerCase().includes('shirt') ? shirtData
-        : [...shirtData, ...pantData];
+    let requiresShirt = ['Two-piece Suit', 'Three-piece Suit', 'Formal Shirt', 'Sherwani', 'Kurta Pajama'].includes(garmentType);
+    let requiresPant = ['Two-piece Suit', 'Three-piece Suit'].includes(garmentType);
 
-    const hasEmptyFields = activeMeasurements.some(m => !m.value.trim());
-    if (hasEmptyFields) {
-      setError("Please fill in all measurement fields");
-      return false;
+    if (requiresShirt) {
+      const emptyShirtFields = shirtData.some(m => !m.value && m.field !== 'Style');
+      if (emptyShirtFields) {
+        setError("Please fill in all shirt measurements");
+        return false;
+      }
     }
+
+    if (requiresPant) {
+      const emptyPantFields = pantData.some(m => !m.value && m.field !== 'Style');
+      if (emptyPantFields) {
+        setError("Please fill in all pant measurements");
+        return false;
+      }
+    }
+
     return true;
   };
 
@@ -535,21 +561,18 @@ export default function OrderDetails() {
                   {/* Pant Style Radio Buttons */}
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-600 mb-2">Style:</label>
-                    <div className="flex space-x-4">
-                      {['Pleated', 'Formal'].map((style) => (
-                        <label key={style} className="flex items-center">
-                          <input
-                            type="radio"
-                            name="pantStyle"
-                            value={style}
-                            onChange={(e) => handleChange("Pant", 0, e.target.value)}
-                            checked={pantData[0].value === style}
-                            className="mr-2"
-                          />
-                          <span className="text-sm">{style}</span>
-                        </label>
+                    <select
+                      value={pantData[0].value}
+                      onChange={(e) => handleChange("Pant", 0, e.target.value)}
+                      className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+                    >
+                      <option value="">Select Style</option>
+                      {pantFields[0].options.map((style) => (
+                        <option key={style} value={style}>
+                          {style}
+                        </option>
                       ))}
-                    </div>
+                    </select>
                   </div>
 
                   <div className="space-y-3">
