@@ -44,18 +44,18 @@ export default function OrderDetails() {
       setNotFound(false);
     }
   }, [query, cityFilter, customers]);
-
+  
+  const fetchOrderID = async () => {
+    try {
+      const res = await API.get("/orders/new"); // Change the endpoint to a new one that generates order ID
+      setOrderId(res.data.orderId);
+    } catch (err) {
+      console.error("Error fetching Order ID:", err);
+    }
+  };
   useEffect(() => {
     // Generate unique order ID from backend when component mounts
-    const fetchOrderId = async () => {
-      try {
-        const res = await API.get("/orders/new"); // Change the endpoint to a new one that generates order ID
-        setOrderId(res.data.orderId);
-      } catch (err) {
-        console.error("Error fetching Order ID:", err);
-      }
-    };
-    fetchOrderId();
+    fetchOrderID();
 
     // default current date for order date
     const today = new Date().toISOString().split("T")[0];
@@ -144,11 +144,6 @@ export default function OrderDetails() {
     // Validate required fields
     if (!selectedCustomer) {
       setError("Please select a customer!");
-      return;
-    }
-
-    if (!garmentType) {
-      setError("Please select a garment type!");
       return;
     }
 
@@ -250,7 +245,7 @@ export default function OrderDetails() {
         resetForm();
 
         // Generate new order ID for next order
-        fetchOrderId();
+        fetchOrderID();
       }
     } catch (err) {
       console.error("Error creating order:", err);
@@ -298,13 +293,7 @@ export default function OrderDetails() {
   const validateMeasurements = () => {
     const activeMeasurements = garmentType.toLowerCase().includes('pant') ? pantData
       : garmentType.toLowerCase().includes('shirt') ? shirtData
-        : [...shirtData, ...pantData];
-
-    const hasEmptyFields = activeMeasurements.some(m => !m.value.trim());
-    if (hasEmptyFields) {
-      setError("Please fill in all measurement fields");
-      return false;
-    }
+        : [...shirtData, ...pantData];s
     return true;
   };
 

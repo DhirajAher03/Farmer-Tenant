@@ -16,9 +16,9 @@ const addOrder = async (req, res) => {
       measurements 
     } = req.body;
 
-    if (!customerId || !garmentType || !orderDate) {
+    if (!customerId || !orderDate) {
       return res.status(400).json({ 
-        message: "Required fields missing: customerId, garmentType, and orderDate are required" 
+        message: "Required fields missing: customerID and orderDate are required" 
       });
     }
 
