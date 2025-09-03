@@ -15,7 +15,7 @@ const CustomersPage = () => {
     name: "",
     mobile: "",
     city: "",
-    orderDate: "",
+    DOB: "",
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [cityFilter, setCityFilter] = useState("");
@@ -127,7 +127,7 @@ const CustomersPage = () => {
 
       // 4. Reset modal
       setIsAddModalOpen(false);
-      setNewCustomer({ name: "", mobile: "", city: "", orderDate: "" });
+      setNewCustomer({ name: "", mobile: "", city: "", DOB: "" });
     } catch (error) {
       console.error("Error adding customer:", error);
     }
@@ -178,8 +178,8 @@ const CustomersPage = () => {
       c.mobile.includes(searchQuery);
     const matchesCity = cityFilter ? c.city === cityFilter : true;
     const matchesDate = dateFilter
-      ? c.orderDate &&
-      new Date(c.orderDate).toISOString().split("T")[0] === dateFilter
+      ? c.DOB &&
+      new Date(c.DOB).toISOString().split("T")[0] === dateFilter
       : true;
     return matchesSearch && matchesCity && matchesDate;
   });
@@ -500,14 +500,14 @@ const CustomersPage = () => {
                 />
               </div>
               <div>
-                <label className="block font-medium mb-1">Order Date</label>
+                <label className="block font-medium mb-1">DOB:</label>
                 <input
                   type="date"
-                  value={newCustomer.orderDate}
+                  value={newCustomer.DOB}
                   onChange={(e) =>
                     setNewCustomer({
                       ...newCustomer,
-                      orderDate: e.target.value,
+                      DOB: e.target.value,
                     })
                   }
                   className="w-full border rounded-lg px-3 py-2"

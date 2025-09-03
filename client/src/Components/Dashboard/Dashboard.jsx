@@ -70,7 +70,7 @@ const Dashboard = () => {
 
   // ✅ Navigate to Reports Page
   const handleViewReports = () => {
-    navigate("/reports");
+    navigate("/layout/dashboard"); // Adjust as needed
   };
 
   return (

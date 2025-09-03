@@ -351,12 +351,12 @@ export default function OrderDetails() {
             </button>
             <button className="flex items-center space-x-2 rounded-lg border px-4 py-2 text-gray-700 bg-white hover:bg-gray-50 shadow-sm">
               <ArrowLeft size={16} />
-              <span>Back to Order</span>
+              <span>Back to Order Page</span>
             </button>
-            <button className="flex items-center space-x-2 rounded-lg border px-4 py-2 text-gray-700 bg-white hover:bg-gray-50 shadow-sm">
+            {/* <button className="flex items-center space-x-2 rounded-lg border px-4 py-2 text-gray-700 bg-white hover:bg-gray-50 shadow-sm">
               <Printer size={16} />
               <span>Print Worksheet</span>
-            </button>
+            </button> */}
           </div>
         </div>
 
@@ -504,12 +504,12 @@ export default function OrderDetails() {
         </div>
 
         {/* Measurement Section */}
-        <div className="bg-[#f5f9ff] py-6 px-4 font-sans">
+        <div className="bg-[#f5f9ff] py-6 font-sans">
           <div className="shadow-md border rounded-xl bg-white p-5">
             <div className="flex items-center border-b pb-3 mb-4">
               <SlidersHorizontal size={18} className="text-gray-700 mr-2" />
               <h2 className="text-gray-800 font-semibold text-base">
-                Measurement Entry
+                Measurement Details
               </h2>
             </div>
 
@@ -538,17 +538,62 @@ export default function OrderDetails() {
                   </div>
 
                   <div className="space-y-3">
-                    {shirtData.map((row, idx) => (
+                    {shirtData.slice(1).map((row, idx) => (
                       <div key={idx} className="grid grid-cols-2 gap-2">
                         <label className="text-sm font-medium text-gray-600 flex items-center">
                           {row.field}
                         </label>
-                        <input
-                          type="text"
-                          value={row.value}
-                          onChange={(e) => handleChange("Shirt", idx, e.target.value)}
-                          className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        />
+                        <div className="flex items-center">
+                          <input
+                            type="text"
+                            value={row.value}
+                            onChange={(e) =>
+                              handleChange("Shirt", idx + 1, e.target.value)
+                            }
+                            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none w-full"
+                          />
+                          <div className="flex ml-2 space-x-1">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleChange(
+                                  "Shirt",
+                                  idx + 1,
+                                  `${parseFloat(row.value) || ""} |`
+                                )
+                              }
+                              className="px-2 py-1 border rounded-md text-xs"
+                            >
+                              |
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleChange(
+                                  "Shirt",
+                                  idx + 1,
+                                  `${parseFloat(row.value) || ""} ||`
+                                )
+                              }
+                              className="px-2 py-1 border rounded-md text-xs"
+                            >
+                              ||
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleChange(
+                                  "Shirt",
+                                  idx + 1,
+                                  `${parseFloat(row.value) || ""} |||`
+                                )
+                              }
+                              className="px-2 py-1 border rounded-md text-xs"
+                            >
+                              |||
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -581,12 +626,57 @@ export default function OrderDetails() {
                         <label className="text-sm font-medium text-gray-600 flex items-center">
                           {row.field}
                         </label>
-                        <input
-                          type="text"
-                          value={row.value}
-                          onChange={(e) => handleChange("Pant", idx + 1, e.target.value)}
-                          className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        />
+                        <div className="flex items-center">
+                          <input
+                            type="text"
+                            value={row.value}
+                            onChange={(e) =>
+                              handleChange("Pant", idx + 1, e.target.value)
+                            }
+                            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none w-full"
+                          />
+                          <div className="flex ml-2 space-x-1">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleChange(
+                                  "Pant",
+                                  idx + 1,
+                                  `${parseFloat(row.value) || ""} |`
+                                )
+                              }
+                              className="px-2 py-1 border rounded-md text-xs"
+                            >
+                              |
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleChange(
+                                  "Pant",
+                                  idx + 1,
+                                  `${parseFloat(row.value) || ""} ||`
+                                )
+                              }
+                              className="px-2 py-1 border rounded-md text-xs"
+                            >
+                              ||
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleChange(
+                                  "Pant",
+                                  idx + 1,
+                                  `${parseFloat(row.value) || ""} |||`
+                                )
+                              }
+                              className="px-2 py-1 border rounded-md text-xs"
+                            >
+                              |||
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -606,15 +696,7 @@ export default function OrderDetails() {
           </div>
         </div>
       </div>
-      <input
-        type="text"
-        placeholder="Enter Full City Name to search"
-        className="px-3 py-1 border rounded-xl text-sm"
-        value={cityFilter}
-        onChange={(e) => setCityFilter(e.target.value)}
-      />
-
-
+  
       {/* Add Customer Modal */}
       {
         isAddModalOpen && (

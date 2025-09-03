@@ -24,6 +24,7 @@ const LoginPage = () => {
 
       if (data?.token) {
         localStorage.setItem("token", data.token);
+        localStorage.setItem("userEmail", email);  // Save user email
 
         if (rememberMe) {
           localStorage.setItem("rememberEmail", email);
@@ -36,7 +37,7 @@ const LoginPage = () => {
         setTimeout(() => {
           setSuccessMessage("");
           navigate("/layout/dashboard");
-        }, 2000); // ✅ 2 sec delay before redirect
+        }, 1000); // ✅ 1 sec delay before redirect
       } else {
         setError("Login failed: token not received");
       }

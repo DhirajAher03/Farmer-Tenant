@@ -1,24 +1,24 @@
 const express = require('express');
-const Order =require('../models/Order')
+const Order = require('../models/Order')
 const generateOrderId = require('../utils/generateOrderId');
 
 // Add Order 
 const addOrder = async (req, res) => {
   try {
-    const { 
+    const {
       orderId,
-      customerId, 
-      garmentType, 
-      status, 
-      orderDate, 
-      dueDate, 
+      customerId,
+      garmentType,
+      status,
+      orderDate,
+      dueDate,
       notes,
-      measurements 
+      measurements
     } = req.body;
 
     if (!customerId || !garmentType || !orderDate) {
-      return res.status(400).json({ 
-        message: "Required fields missing: customerId, garmentType, and orderDate are required" 
+      return res.status(400).json({
+        message: "Required fields missing: customerId, garmentType, and orderDate are required"
       });
     }
 
@@ -44,7 +44,7 @@ const addOrder = async (req, res) => {
 
 // Get All Orders
 const getOrders = async (req, res) => {
-    try {
+  try {
     const orders = await Order.find({ customerId: req.params.id }).populate("customerId");
     res.json(orders);
   } catch (error) {
@@ -91,4 +91,26 @@ const getMeasurementsByCustomer = async (req, res) => {
   }
 };
 
-module.exports = { addOrder, getOrders, getNewOrderId, getOrdersByCustomer, getMeasurementsByCustomer };
+// Get All Orders with Customer Details
+const getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find().populate('customerId').sort({ orderDate: -1 });
+    const formattedOrders = orders.map(order => ({
+      ...order.toObject(),
+      customerName: order.customerId ? order.customerId.name : 'Unknown Customer'
+    }));
+    res.json(formattedOrders);
+  } catch (error) {
+    console.error("Error fetching all orders:", error);
+    res.status(500).json({ message: "Error fetching orders" });
+  }
+};
+
+module.exports = {
+  addOrder,
+  getOrders,
+  getNewOrderId,
+  getOrdersByCustomer,
+  getMeasurementsByCustomer,
+  getAllOrders
+};
