@@ -63,6 +63,7 @@ const getNewOrderId = async (req, res) => {
   }
 };
 
+// Get Orders by Customer ID
 const getOrdersByCustomer = async (req, res) => {
   try {
     const orders = await Order.find({ customerId: req.params.id });
@@ -72,6 +73,18 @@ const getOrdersByCustomer = async (req, res) => {
   }
 };
 
+// Get all orders
+const getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find() // sabhi orders fetch honge
+      .populate("customerId")
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get Measurements by Customer ID
 const getMeasurementsByCustomer = async (req, res) => {
   try {
     // Get the latest order with measurements for this customer
@@ -91,20 +104,20 @@ const getMeasurementsByCustomer = async (req, res) => {
   }
 };
 
-// Get All Orders with Customer Details
-const getAllOrders = async (req, res) => {
-  try {
-    const orders = await Order.find().populate('customerId').sort({ orderDate: -1 });
-    const formattedOrders = orders.map(order => ({
-      ...order.toObject(),
-      customerName: order.customerId ? order.customerId.name : 'Unknown Customer'
-    }));
-    res.json(formattedOrders);
-  } catch (error) {
-    console.error("Error fetching all orders:", error);
-    res.status(500).json({ message: "Error fetching orders" });
-  }
-};
+// // Get All Orders with Customer Details
+// const getAllOrders = async (req, res) => {
+//   try {
+//     const orders = await Order.find().populate('customerId').sort({ orderDate: -1 });
+//     const formattedOrders = orders.map(order => ({
+//       ...order.toObject(),
+//       customerName: order.customerId ? order.customerId.name : 'Unknown Customer'
+//     }));
+//     res.json(formattedOrders);
+//   } catch (error) {
+//     console.error("Error fetching all orders:", error);
+//     res.status(500).json({ message: "Error fetching orders" });
+//   }
+// };
 
 module.exports = {
   addOrder,

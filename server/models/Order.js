@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const orderSchema = new mongoose.Schema({
   orderId: { type: String, required: true, unique: true },
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", required: true },
-  garmentType: { type: String, required: true },
+  garmentType: { type: String},
   status: { type: String, required: true, default: 'Active' },
   orderDate: { type: Date, required: true },
   dueDate: { type: Date },
