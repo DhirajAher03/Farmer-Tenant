@@ -44,18 +44,18 @@ export default function OrderDetails() {
       setNotFound(false);
     }
   }, [query, cityFilter, customers]);
-  
-  const fetchOrderID = async () => {
-    try {
-      const res = await API.get("/orders/new"); // Change the endpoint to a new one that generates order ID
-      setOrderId(res.data.orderId);
-    } catch (err) {
-      console.error("Error fetching Order ID:", err);
-    }
-  };
+
   useEffect(() => {
     // Generate unique order ID from backend when component mounts
-    fetchOrderID();
+    const fetchOrderId = async () => {
+      try {
+        const res = await API.get("/orders/new"); // Change the endpoint to a new one that generates order ID
+        setOrderId(res.data.orderId);
+      } catch (err) {
+        console.error("Error fetching Order ID:", err);
+      }
+    };
+    fetchOrderId();
 
     // default current date for order date
     const today = new Date().toISOString().split("T")[0];
@@ -144,6 +144,11 @@ export default function OrderDetails() {
     // Validate required fields
     if (!selectedCustomer) {
       setError("Please select a customer!");
+      return;
+    }
+
+    if (!garmentType) {
+      setError("Please select a garment type!");
       return;
     }
 
@@ -261,7 +266,7 @@ export default function OrderDetails() {
         resetForm();
 
         // Generate new order ID for next order
-        fetchOrderID();
+        fetchOrderId();
       }
     } catch (err) {
       console.error("Error creating order:", err);
@@ -533,62 +538,17 @@ export default function OrderDetails() {
                   </div>
 
                   <div className="space-y-3">
-                    {shirtData.slice(1).map((row, idx) => (
+                    {shirtData.map((row, idx) => (
                       <div key={idx} className="grid grid-cols-2 gap-2">
                         <label className="text-sm font-medium text-gray-600 flex items-center">
                           {row.field}
                         </label>
-                        <div className="flex items-center">
-                          <input
-                            type="text"
-                            value={row.value}
-                            onChange={(e) =>
-                              handleChange("Shirt", idx + 1, e.target.value)
-                            }
-                            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none w-full"
-                          />
-                          <div className="flex ml-2 space-x-1">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleChange(
-                                  "Shirt",
-                                  idx + 1,
-                                  `${parseFloat(row.value) || ""} |`
-                                )
-                              }
-                              className="px-2 py-1 border rounded-md text-xs"
-                            >
-                              |
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleChange(
-                                  "Shirt",
-                                  idx + 1,
-                                  `${parseFloat(row.value) || ""} ||`
-                                )
-                              }
-                              className="px-2 py-1 border rounded-md text-xs"
-                            >
-                              ||
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleChange(
-                                  "Shirt",
-                                  idx + 1,
-                                  `${parseFloat(row.value) || ""} |||`
-                                )
-                              }
-                              className="px-2 py-1 border rounded-md text-xs"
-                            >
-                              |||
-                            </button>
-                          </div>
-                        </div>
+                        <input
+                          type="text"
+                          value={row.value}
+                          onChange={(e) => handleChange("Shirt", idx, e.target.value)}
+                          className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
                       </div>
                     ))}
                   </div>
@@ -621,57 +581,12 @@ export default function OrderDetails() {
                         <label className="text-sm font-medium text-gray-600 flex items-center">
                           {row.field}
                         </label>
-                        <div className="flex items-center">
-                          <input
-                            type="text"
-                            value={row.value}
-                            onChange={(e) =>
-                              handleChange("Pant", idx + 1, e.target.value)
-                            }
-                            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none w-full"
-                          />
-                          <div className="flex ml-2 space-x-1">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleChange(
-                                  "Pant",
-                                  idx + 1,
-                                  `${parseFloat(row.value) || ""} |`
-                                )
-                              }
-                              className="px-2 py-1 border rounded-md text-xs"
-                            >
-                              |
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleChange(
-                                  "Pant",
-                                  idx + 1,
-                                  `${parseFloat(row.value) || ""} ||`
-                                )
-                              }
-                              className="px-2 py-1 border rounded-md text-xs"
-                            >
-                              ||
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleChange(
-                                  "Pant",
-                                  idx + 1,
-                                  `${parseFloat(row.value) || ""} |||`
-                                )
-                              }
-                              className="px-2 py-1 border rounded-md text-xs"
-                            >
-                              |||
-                            </button>
-                          </div>
-                        </div>
+                        <input
+                          type="text"
+                          value={row.value}
+                          onChange={(e) => handleChange("Pant", idx + 1, e.target.value)}
+                          className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
                       </div>
                     ))}
                   </div>
