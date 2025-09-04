@@ -9,7 +9,6 @@ const CustomersPage = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState("orders");
   const [editData, setEditData] = useState({});
   const [newCustomer, setNewCustomer] = useState({
     name: "",
@@ -18,82 +17,22 @@ const CustomersPage = () => {
     DOB: "",
   });
   const [searchQuery, setSearchQuery] = useState("");
+  const [showOrders, setShowOrders] = useState(false);
   const [cityFilter, setCityFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [customerOrders, setCustomerOrders] = useState([]);
-  const [customerMeasurements, setCustomerMeasurements] = useState([]);
 
   const handleView = async (customer) => {
     setSelectedCustomer(customer);
     setEditData(customer);
     setIsEditing(false);
-    setActiveTab("orders");
 
     try {
-      // Fetch customer orders
       const ordersRes = await API.get(`/customers/${customer._id}/orders`);
       setCustomerOrders(ordersRes.data || []);
-
-      // Extract measurements from the latest order
-      if (ordersRes.data && ordersRes.data.length > 0) {
-        const latestOrder = ordersRes.data[0]; // Assuming orders are sorted by date
-        const measurements = [];
-
-        if (latestOrder.measurements) {
-          // Add shirt measurements
-          if (latestOrder.measurements.shirt && Array.isArray(latestOrder.measurements.shirt)) {
-            latestOrder.measurements.shirt.forEach(m => {
-              // Skip empty or invalid values
-              if (!m.field || !m.value) return;
-
-              let displayField = m.field;
-              if (m.field === 'Style') {
-                displayField = 'Shirt Style';
-              } else {
-                displayField = `Shirt ${m.field}`;
-              }
-
-              measurements.push({
-                field: displayField,
-                value: m.value,
-                unit: m.field === 'Style' || m.field === 'Notes' ? '' : 'inches',
-                notes: ''
-              });
-            });
-          }
-
-          // Add pant measurements
-          if (latestOrder.measurements.pant && Array.isArray(latestOrder.measurements.pant)) {
-            latestOrder.measurements.pant.forEach(m => {
-              // Skip empty or invalid values
-              if (!m.field || !m.value) return;
-
-              let displayField = m.field;
-              if (m.field === 'Style') {
-                displayField = 'Pant Style';
-              } else {
-                displayField = `Pant ${m.field}`;
-              }
-
-              measurements.push({
-                field: displayField,
-                value: m.value,
-                unit: m.field === 'Style' || m.field === 'Notes' ? '' : 'inches',
-                notes: ''
-              });
-            });
-          }
-        }
-
-        console.log('Measurements found:', measurements); // Debug log
-        setCustomerMeasurements(measurements);
-      } else {
-        setCustomerMeasurements([]);
-      }
     } catch (error) {
-      console.error("Error fetching related data:", error);
+      console.error("Error fetching orders:", error);
       setCustomerOrders([]);
-      setCustomerMeasurements([]);
     }
   };
 
@@ -114,18 +53,11 @@ const CustomersPage = () => {
   const handleAddCustomer = async (e) => {
     e.preventDefault();
     try {
-      // 1. Add customer
       const res = await API.post("/customers", newCustomer);
-
-      // 2. Update state
       setCustomers([...customers, res.data]);
-
-      // 3. Add Activity Log
       await API.post("/activities", {
         message: `Customer added successfully: ${newCustomer.name}`,
       });
-
-      // 4. Reset modal
       setIsAddModalOpen(false);
       setNewCustomer({ name: "", mobile: "", city: "", DOB: "" });
     } catch (error) {
@@ -141,8 +73,6 @@ const CustomersPage = () => {
       );
       setSelectedCustomer(res.data);
       setIsEditing(false);
-
-      // ✅ Log Update Activity
       await API.post("/activities", {
         message: `Customer updated: ${editData.name}`,
       });
@@ -161,8 +91,6 @@ const CustomersPage = () => {
       if (selectedCustomer && selectedCustomer._id === id) {
         setSelectedCustomer(null);
       }
-
-      // ✅ Log Delete Activity
       await API.post("/activities", {
         message: `Customer deleted: ${deletedCustomer?.name || "Unknown"}`,
       });
@@ -185,10 +113,7 @@ const CustomersPage = () => {
   });
 
   return (
-    <div
-      className="w-full min-h-screen p-6"
-      style={{ backgroundColor: "#f5f9ff" }}
-    >
+    <div className="w-full min-h-screen p-6" style={{ backgroundColor: "#f5f9ff" }}>
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">
@@ -291,35 +216,47 @@ const CustomersPage = () => {
           </div>
 
           {/* ✅ Right Panel - Customer Details */}
-          <div className="bg-[#f5f9ff] rounded-xl border p-4 flex flex-col justify-between">
+          <div className="bg-[#f5f9ff] rounded-xl border p-4">
             {selectedCustomer ? (
               <>
-                <div>
-                  <p className="text-sm text-gray-400 mb-4">
-                    Selected: {selectedCustomer.name}
-                  </p>
+                {!isEditing ? (
+                  <div>
+                    {/* Customer Details in 2 rows */}
+                    <h4 className="font-semibold text-lg mb-4">Customer Details</h4>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <p><strong>Name:</strong> {selectedCustomer.name}</p>
+                      <p><strong>Mobile:</strong> {selectedCustomer.mobile}</p>
+                      <p><strong>City:</strong> {selectedCustomer.city}</p>
+                      <p>
+                        <strong>DOB:</strong>{" "}
+                        {selectedCustomer.DOB
+                          ? new Date(selectedCustomer.DOB).toLocaleDateString("en-GB")
+                          : ""}
+                      </p>
+                    </div>
 
-                  {["orders", "measurements", "messages"].map((tab) => (
+                    {/* Edit Button */}
                     <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={`px-3 py-1 rounded-lg text-sm mb-2 w-full text-left ${activeTab === tab
-                        ? "bg-blue-600 text-white"
-                        : "bg-white border"
-                        }`}
+                      onClick={() => setIsEditing(true)}
+                      className="w-full mb-3 px-4 py-2 bg-yellow-100 text-yellow-700 rounded-xl hover:bg-yellow-200"
                     >
-                      {tab === "orders"
-                        ? "Order History"
-                        : tab === "measurements"
-                          ? "Measurements"
-                          : "Messages"}
+                      Edit
                     </button>
-                  ))}
 
-                  <div className="mt-4">
-                    {activeTab === "orders" && (
-                      <div>
-                        <h4 className="font-semibold mb-2">Orders</h4>
+                    {/* Order History Toggle Button */}
+                    <button
+                      onClick={() => setShowOrders(!showOrders)}
+                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
+                    >
+                      {showOrders ? "Hide Order History" : "Show Order History"}
+                    </button>
+
+                    {/* Order History Section */}
+                    {showOrders && (
+                      <div className="mt-4">
+                        {/* <h4 className="font-semibold text-white text-center w-full bg-blue-600 py-3 rounded-lg shadow mb-4">
+                          Order History
+                        </h4> */}
                         {customerOrders.length > 0 ? (
                           <ul className="space-y-2">
                             {customerOrders.map((order) => (
@@ -327,15 +264,9 @@ const CustomersPage = () => {
                                 key={order._id}
                                 className="p-2 border rounded bg-white"
                               >
-                                <p>
-                                  <strong>Order ID:</strong> {order.orderId}
-                                </p>
-                                <p>
-                                  <strong>Garment:</strong> {order.garmentType}
-                                </p>
-                                <p>
-                                  <strong>Status:</strong> {order.status}
-                                </p>
+                                <p><strong>Order ID:</strong> {order.orderId}</p>
+                                <p><strong>Garment:</strong> {order.garmentType}</p>
+                                <p><strong>Status:</strong> {order.status}</p>
                                 <p>
                                   <strong>Due Date:</strong>{" "}
                                   {new Date(order.dueDate).toLocaleDateString()}
@@ -344,109 +275,59 @@ const CustomersPage = () => {
                             ))}
                           </ul>
                         ) : (
-                          <p className="text-sm text-gray-500">
-                            No orders found.
-                          </p>
+                          <p className="text-sm text-gray-500">No orders found.</p>
                         )}
                       </div>
-                    )}
-
-                    {activeTab === "measurements" && (
-                      <div>
-                        <h4 className="font-semibold mb-2">Measurements</h4>
-                        {customerMeasurements.length > 0 ? (
-                          <div className="space-y-4">
-                            {/* Shirt Measurements */}
-                            <div>
-                              <h5 className="font-medium text-blue-600 mb-2">Shirt Measurements</h5>
-                              <table className="w-full text-sm border bg-white">
-                                <thead>
-                                  <tr className="bg-gray-50">
-                                    <th className="px-2 py-1 border text-left">Measurement</th>
-                                    <th className="px-2 py-1 border text-left">Value</th>
-                                    <th className="px-2 py-1 border text-left">Unit</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {customerMeasurements
-                                    .filter(m => m.field.startsWith('Shirt'))
-                                    .map((m, idx) => (
-                                      <tr key={idx}>
-                                        <td className="border px-2 py-1">
-                                          {m.field.replace('Shirt ', '')}
-                                        </td>
-                                        <td className="border px-2 py-1">
-                                          {m.value}
-                                        </td>
-                                        <td className="border px-2 py-1">{m.unit}</td>
-                                      </tr>
-                                    ))}
-                                </tbody>
-                              </table>
-                            </div>
-
-                            {/* Pant Measurements */}
-                            <div>
-                              <h5 className="font-medium text-blue-600 mb-2">Pant Measurements</h5>
-                              <table className="w-full text-sm border bg-white">
-                                <thead>
-                                  <tr className="bg-gray-50">
-                                    <th className="px-2 py-1 border text-left">Measurement</th>
-                                    <th className="px-2 py-1 border text-left">Value</th>
-                                    <th className="px-2 py-1 border text-left">Unit</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {customerMeasurements
-                                    .filter(m => m.field.startsWith('Pant'))
-                                    .map((m, idx) => (
-                                      <tr key={idx}>
-                                        <td className="border px-2 py-1">
-                                          {m.field.replace('Pant ', '')}
-                                        </td>
-                                        <td className="border px-2 py-1">
-                                          {m.value}
-                                        </td>
-                                        <td className="border px-2 py-1">{m.unit}</td>
-                                      </tr>
-                                    ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-gray-500">
-                            No measurements found.
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                    {activeTab === "messages" && (
-                      <p className="text-sm text-gray-500">
-                        Customer messages...
-                      </p>
                     )}
                   </div>
-                </div>
-
-                <div className="mt-4">
-                  {isEditing ? (
-                    <button
-                      onClick={handleSaveChanges}
-                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
-                    >
-                      Save Changes
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="w-full px-4 py-2 bg-yellow-100 text-yellow-700 rounded-xl hover:bg-yellow-200"
-                    >
-                      Edit
-                    </button>
-                  )}
-                </div>
+                ) : (
+                  // Edit Mode
+                  <div>
+                    <h4 className="font-semibold mb-4">Edit Customer Details</h4>
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        value={editData.name}
+                        onChange={(e) =>
+                          setEditData({ ...editData, name: e.target.value })
+                        }
+                        className="w-full border rounded-lg px-3 py-2"
+                      />
+                      <input
+                        type="text"
+                        value={editData.mobile}
+                        onChange={(e) =>
+                          setEditData({ ...editData, mobile: e.target.value })
+                        }
+                        className="w-full border rounded-lg px-3 py-2"
+                      />
+                      <input
+                        type="text"
+                        value={editData.city}
+                        onChange={(e) =>
+                          setEditData({ ...editData, city: e.target.value })
+                        }
+                        className="w-full border rounded-lg px-3 py-2"
+                      />
+                      <input
+                        type="date"
+                        value={editData.DOB}
+                        onChange={(e) =>
+                          setEditData({ ...editData, DOB: e.target.value })
+                        }
+                        className="w-full border rounded-lg px-3 py-2"
+                      />
+                    </div>
+                    <div className="mt-4">
+                      <button
+                        onClick={handleSaveChanges}
+                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
+                      >
+                        Save Changes
+                      </button>
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <p className="text-gray-400 text-sm">

@@ -13,7 +13,10 @@ const addOrder = async (req, res) => {
       orderDate,
       dueDate,
       notes,
-      measurements
+      measurements,
+      totalAmount,
+      advanceAmount,
+      remainingAmount
     } = req.body;
 
     if (!customerId || !garmentType || !orderDate) {
@@ -30,7 +33,10 @@ const addOrder = async (req, res) => {
       orderDate: new Date(orderDate),
       dueDate: dueDate ? new Date(dueDate) : undefined,
       notes,
-      measurements
+      measurements,
+      totalAmount: totalAmount || 0,
+      advanceAmount: advanceAmount || 0,
+      remainingAmount: remainingAmount || 0
     });
 
     await newOrder.save();

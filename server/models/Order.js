@@ -21,7 +21,7 @@ const orderSchema = new mongoose.Schema({
       front: { type: String }
     },
     pant: {
-      style: { type: String, enum: ['Pleated', 'Flat Front', 'Apple Cut'] },
+      style: { type: String, enum: ['Pleated', 'Narrow', 'Ankle Fit', 'Baggy', 'Jeans'] },
       height: { type: String },
       waist: { type: String },
       sheet: { type: String },
@@ -31,6 +31,9 @@ const orderSchema = new mongoose.Schema({
       long: { type: String }
     }
   },
+  totalAmount: { type: Number, required: true, default: 0 },
+  advanceAmount: { type: Number, required: true, default: 0 },
+  remainingAmount: { type: Number, required: true, default: 0 },
   createdAt: { type: Date, default: Date.now }
 });
 

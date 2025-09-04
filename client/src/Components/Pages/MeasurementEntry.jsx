@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiSearch } from "react-icons/fi";
+import { FiSearch, FiEye, FiEyeOff, FiEdit, FiTrash2 } from "react-icons/fi";
 import API from "../../api/axios.js";
 import { useOrders } from "../../context/OrderContext";
 
@@ -146,7 +146,7 @@ const OrderPage = () => {
           />
         </div>
         <select
-          className="px-3 py-1 border rounded-xl text-sm"
+          className="px-2 py-1 pr-2-mr-4 border rounded-xl text-sm"
           value={cityFilter}
           onChange={(e) => setCityFilter(e.target.value)}
         >
@@ -167,27 +167,28 @@ const OrderPage = () => {
       <table className="w-full text-sm border-separate border-spacing-0 rounded-xl overflow-hidden border-2 border-gray-100">
         <thead>
           <tr className="bg-white text-gray-600">
-            <th className="text-left py-3 px-3">#</th>
-            <th className="text-left py-3 px-3">Order ID</th>
-            <th className="text-left py-3 px-3">Customer Name</th>
-            <th className="text-left py-3 px-3">Status</th>
-            <th className="text-left py-3 px-3">Order Date</th>
-            <th className="text-left py-3 px-3">Due Date</th>
-            <th className="text-left py-3 px-3">Actions</th>
+            <th className="text-center py-3 px-3">#</th>
+            <th className="text-center py-3 px-3">Order ID</th>
+            <th className="text-center py-3 px-3">Customer Name</th>
+            <th className="text-center py-3 px-3">Status</th>
+            <th className="text-center py-3 px-3">Order Date</th>
+            <th className="text-center py-3 px-3">Due Date</th>
+            <th className="text-center py-3 px-3">Rest Amt(₹)</th>
+            <th className="text-center py-3 px-3">Actions</th>
           </tr>
         </thead>
         <tbody>
           {filteredOrders.map((order, index) => (
             <React.Fragment key={order._id}>
               <tr className="bg-[#f5f9ff] hover:bg-blue-100">
-                <td className="py-3 px-3">{index + 1}</td>
-                <td className="px-3">{order.orderId}</td>
-                <td className="px-3">{order.customerName}</td>
-                <td className="px-3">
+                <td className="py-3 text-center px-3">{index + 1}</td>
+                <td className="px-3 text-center">{order.orderId}</td>
+                <td className="px-3 text-center">{order.customerName}</td>
+                <td className="px-3 text-center">
                   <select
                     value={order.status}
                     onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                    className={`px-2 py-1 rounded-lg text-xs border ${order.status === "Active"
+                    className={`px-2 text-center py-1 rounded-lg text-xs border ${order.status === "Active"
                       ? "bg-blue-50 text-blue-800 border-blue-200"
                       : order.status === "Completed"
                         ? "bg-green-50 text-green-800 border-green-200"
@@ -199,38 +200,44 @@ const OrderPage = () => {
                     <option value="Pending">Pending</option>
                   </select>
                 </td>
-                <td className="px-3">
-                  {new Date(order.orderDate).toLocaleDateString()}
+                <td className="px-3 text-center">
+                  {new Date(order.orderDate).toLocaleDateString("en-GB")}
                 </td>
-                <td className="px-3">
+                <td className="px-3 text-center">
                   {order.dueDate
-                    ? new Date(order.dueDate).toLocaleDateString()
+                    ? new Date(order.dueDate).toLocaleDateString("en-GB")
                     : "-"}
                 </td>
-                <td className="px-3 flex gap-2">
+                <td className="px-3 text-center">
+                  ₹{order.remainingAmount || 0}
+                </td>
+                <td className="px-3 justify-center mt-[0.4rem] flex gap-2">
                   <button
                     onClick={() => {
                       setSelectedOrder(selectedOrder?._id === order._id ? null : order);
                       setEditMode(false);
                     }}
-                    className="flex items-center gap-1 px-3 py-1 bg-white border rounded-lg hover:bg-gray-100"
+                    className="flex items-center justify-center w-8 h-8 bg-white border rounded-lg hover:bg-gray-100"
+                    title={selectedOrder?._id === order._id ? "Hide Details" : "View Details"}
                   >
-                    {selectedOrder?._id === order._id ? "Hide" : "View"}
+                    {selectedOrder?._id === order._id ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                   </button>
                   <button
                     onClick={() => {
                       setSelectedOrder(order);
                       setEditMode(true);
                     }}
-                    className="flex items-center gap-1 px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100"
+                    className="flex items-center justify-center w-8 h-8 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100"
+                    title="Edit Order"
                   >
-                    Edit
+                    <FiEdit size={16} />
                   </button>
                   <button
                     onClick={() => handleDeleteOrder(order._id)}
-                    className="flex items-center gap-1 px-3 py-1 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100"
+                    className="flex items-center justify-center w-8 h-8 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100"
+                    title="Delete Order"
                   >
-                    Delete
+                    <FiTrash2 size={16} />
                   </button>
                 </td>
               </tr>
@@ -377,9 +384,67 @@ const OrderPage = () => {
                                 <p className="text-sm">{selectedOrder.notes || '-'}</p>
                               )}
                             </div>
-                          </div>
 
-                          {/* Measurements Section */}
+                            {/* Amount Details */}
+                            <div className="col-span-2 mt-4">
+                              <h3 className="text-lg font-medium mb-4">Amount Details</h3>
+                              <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                  <label className="text-gray-500 text-sm block">
+                                    Total Amount (₹)
+                                  </label>
+                                  {editMode ? (
+                                    <input
+                                      type="number"
+                                      value={selectedOrder.totalAmount || 0}
+                                      onChange={(e) => {
+                                        const total = Number(e.target.value);
+                                        setSelectedOrder({
+                                          ...selectedOrder,
+                                          totalAmount: total,
+                                          remainingAmount: total - (selectedOrder.advanceAmount || 0)
+                                        });
+                                      }}
+                                      className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-1 text-sm"
+                                      min="0"
+                                    />
+                                  ) : (
+                                    <span className="text-sm font-medium">₹{selectedOrder.totalAmount || 0}</span>
+                                  )}
+                                </div>
+                                <div>
+                                  <label className="text-gray-500 text-sm block">
+                                    Advance Amount (₹)
+                                  </label>
+                                  {editMode ? (
+                                    <input
+                                      type="number"
+                                      value={selectedOrder.advanceAmount || 0}
+                                      onChange={(e) => {
+                                        const advance = Number(e.target.value);
+                                        setSelectedOrder({
+                                          ...selectedOrder,
+                                          advanceAmount: advance,
+                                          remainingAmount: (selectedOrder.totalAmount || 0) - advance
+                                        });
+                                      }}
+                                      className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-1 text-sm"
+                                      min="0"
+                                      max={selectedOrder.totalAmount}
+                                    />
+                                  ) : (
+                                    <span className="text-sm font-medium">₹{selectedOrder.advanceAmount || 0}</span>
+                                  )}
+                                </div>
+                                <div>
+                                  <label className="text-gray-500 text-sm block">
+                                    Remaining Amount (₹)
+                                  </label>
+                                  <span className="text-sm font-medium">₹{selectedOrder.remainingAmount || 0}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>                          {/* Measurements Section */}
                           {selectedOrder.measurements && (
                             <div className="grid grid-cols-2 gap-6">
                               {/* Shirt Measurements */}

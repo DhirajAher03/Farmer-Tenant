@@ -47,27 +47,31 @@ const Dashboard = () => {
   };
 
   // ✅ Add Customer (Local update)
+  // const handleAddCustomer = () => {
+  //   const newCustomerId = customersCount + 1;
+  //   setCustomersCount(newCustomerId);
+
+  //   const newActivity = {
+  //     message: `✅ Customer Added: Customer ${newCustomerId} (ID: ${newCustomerId})`,
+  //     time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+  //   };
+
+
+  //   setActivities((prev) => [newActivity, ...prev].slice(0, 3));
+  // };
+
   const handleAddCustomer = () => {
-    const newCustomerId = customersCount + 1;
-    setCustomersCount(newCustomerId);
-
-    const newActivity = {
-      message: `✅ Customer Added: Customer ${newCustomerId} (ID: ${newCustomerId})`,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    };
-
-
-    setActivities((prev) => [newActivity, ...prev].slice(0, 3));
+    navigate("/layout/customers");
   };
 
   // ✅ Navigate to Measurement Page
   const handleNewMeasurement = () => {
-    navigate("/layout/measurements");
+    navigate("/layout/orders");
   };
 
   // ✅ Navigate to Messages Page
   const handleSendMessage = () => {
-    navigate("/messages");
+    navigate("/layout/dashboard");
   };
 
   // ✅ Navigate to Reports Page

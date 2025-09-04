@@ -27,6 +27,9 @@ export default function OrderDetails() {
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
   const [shirtStyle, setShirtStyle] = useState("Short Shirt");
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [advanceAmount, setAdvanceAmount] = useState(0);
+  const [remainingAmount, setRemainingAmount] = useState(0);
 
   useEffect(() => {
     if (query.trim().length > 0 || cityFilter.trim().length > 0) {
@@ -87,7 +90,7 @@ export default function OrderDetails() {
       field: "Style",
       value: "",
       type: "select",
-      options: ["Pleated", "Flat Front", "Apple Cut"],
+      options: ["Pleated", "Narrow", "Ankle Fit", "Baggy", "Jeans"],
     },
     { field: "Height", value: "" },
     { field: "Waist", value: "" },
@@ -125,6 +128,11 @@ export default function OrderDetails() {
   useEffect(() => {
     fetchCustomers();
   }, []);
+
+  // Calculate remaining amount whenever total or advance amount changes
+  useEffect(() => {
+    setRemainingAmount(totalAmount - advanceAmount);
+  }, [totalAmount, advanceAmount]);
 
   const handleChange = (tab, idx, val) => {
     if (tab === "Shirt") {
@@ -171,7 +179,10 @@ export default function OrderDetails() {
         orderDate,
         dueDate,
         notes,
-        measurements
+        measurements,
+        totalAmount,
+        advanceAmount,
+        remainingAmount
       };
 
       // Send to backend
@@ -220,7 +231,7 @@ export default function OrderDetails() {
         collar: shirtData.find(item => item.field === "Collar")?.value || ""
       },
       pant: {
-        style: pantData.find(item => item.field === "Style")?.value || "Apple Cut",
+        style: pantData.find(item => item.field === "Style")?.value || "Ankle Fit",
         height: pantData.find(item => item.field === "Height")?.value || "",
         waist: pantData.find(item => item.field === "Waist")?.value || "",
         sheet: pantData.find(item => item.field === "Sheet")?.value || "",
@@ -283,6 +294,10 @@ export default function OrderDetails() {
                 <p>Due Date: ${dueDate || 'Not specified'}</p>
                 <p>Status: ${status}</p>
                 <p>Notes: ${notes || 'No notes'}</p>
+                <h3>Amount Details</h3>
+                <p>Total Amount: ₹${totalAmount}</p>
+                <p>Advance Paid: ₹${advanceAmount}</p>
+                <p>Remaining Amount: ₹${remainingAmount}</p>
               </div>
               <div class="measurements">
                 <div class="section">
@@ -639,14 +654,64 @@ export default function OrderDetails() {
                   </div>
                 </div>
               </div>
-              {/* Save Button Section */}
-              <div className="mt-6 flex justify-center pb-6">
+              {/* Amount Details Section */}
+              <div className="mt-6 border rounded-lg p-4">
+                <h3 className="text-lg font-medium mb-4">Amount Details</h3>
+                <div className="grid grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-2">
+                      Total Amount (₹)
+                    </label>
+                    <input
+                      type="number"
+                      value={totalAmount}
+                      onChange={(e) => setTotalAmount(Number(e.target.value))}
+                      min="0"
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-2">
+                      Advance Amount (₹)
+                    </label>
+                    <input
+                      type="number"
+                      value={advanceAmount}
+                      onChange={(e) => setAdvanceAmount(Number(e.target.value))}
+                      min="0"
+                      max={totalAmount}
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-2">
+                      Remaining Amount (₹)
+                    </label>
+                    <input
+                      type="number"
+                      value={remainingAmount}
+                      readOnly
+                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Save and Print Buttons Section */}
+              <div className="mt-6 flex justify-center gap-4 pb-6">
                 <button
                   onClick={handleSubmit}
                   className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-md"
                 >
                   <Save size={20} />
                   <span className="font-medium">Save Order</span>
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="flex items-center space-x-2 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 shadow-md"
+                >
+                  <Printer size={20} />
+                  <span className="font-medium">Print Order</span>
                 </button>
               </div>
             </div>

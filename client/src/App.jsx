@@ -9,6 +9,7 @@ import LoginPage from './Components/Pages/LoginPage';
 import SettingsPage from './Components/Pages/SettingPage';
 import ProtectedRoute from './Components/ProtectedRoute';
 import { OrderProvider } from './context/OrderContext';
+import MessagingPage from "./Components/Pages/MessagingPage";
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
             <Route path="customers" element={<CustomerPage />} />
             <Route path="orders" element={<OrderPage />} />
             <Route path="measurements" element={<MeasurementEntry />} />
+             <Route path="messaging" element={<MessagingPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
 
