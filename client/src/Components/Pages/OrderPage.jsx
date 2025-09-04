@@ -70,7 +70,7 @@ export default function OrderDetails() {
       field: "Style",
       value: "",
       type: "select",
-      options: ["Regular", "Slim Fit", "Loose"]
+      options: ["Apple Cut", "Manella", "Short Shirt"]
     },
     { field: "Height", value: "" },
     { field: "Chest", value: "" },
@@ -79,6 +79,7 @@ export default function OrderDetails() {
     { field: "Sleeves", value: "" },
     { field: "Shoulders", value: "" },
     { field: "Collar", value: "" },
+    { field: "Front", value: "" },
   ];
 
   const pantFields = [
@@ -86,7 +87,7 @@ export default function OrderDetails() {
       field: "Style",
       value: "",
       type: "select",
-      options: ["Pleated", "Flat Front", "Regular"],
+      options: ["Pleated", "Flat Front", "Apple Cut"],
     },
     { field: "Height", value: "" },
     { field: "Waist", value: "" },
@@ -140,11 +141,53 @@ export default function OrderDetails() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setIsSaving(true);
 
-    // Validate required fields
-    if (!selectedCustomer) {
-      setError("Please select a customer!");
-      return;
+    try {
+      // Validate required fields
+      if (!selectedCustomer) {
+        setError("Please select a customer!");
+        return;
+      }
+
+      // Create measurements object
+      const measurements = {
+        shirt: shirtData.reduce((acc, field) => {
+          acc[field.field.toLowerCase()] = field.value;
+          return acc;
+        }, {}),
+        pant: pantData.reduce((acc, field) => {
+          acc[field.field.toLowerCase()] = field.value;
+          return acc;
+        }, {})
+      };
+
+      // Create order data
+      const orderData = {
+        orderId,
+        customerId: selectedCustomer._id,
+        garmentType,
+        status,
+        orderDate,
+        dueDate,
+        notes,
+        measurements
+      };
+
+      // Send to backend
+      await API.post('/orders', orderData);
+
+      // Reset form
+      resetForm();
+
+      // Show success message
+      toast.success('Order saved successfully!');
+
+    } catch (error) {
+      console.error('Error saving order:', error);
+      setError(error.response?.data?.message || 'Failed to save order');
+    } finally {
+      setIsSaving(false);
     }
 
     if (!garmentType) {
@@ -167,7 +210,7 @@ export default function OrderDetails() {
     // Convert array of fields to object structure matching backend schema
     const measurementsData = {
       shirt: {
-        style: shirtData.find(item => item.field === "Style")?.value || "Regular",
+        style: shirtData.find(item => item.field === "Style")?.value || "Apple Cut",
         height: shirtData.find(item => item.field === "Height")?.value || "",
         chest: shirtData.find(item => item.field === "Chest")?.value || "",
         stomach: shirtData.find(item => item.field === "Stomach")?.value || "",
@@ -177,7 +220,7 @@ export default function OrderDetails() {
         collar: shirtData.find(item => item.field === "Collar")?.value || ""
       },
       pant: {
-        style: pantData.find(item => item.field === "Style")?.value || "Regular",
+        style: pantData.find(item => item.field === "Style")?.value || "Apple Cut",
         height: pantData.find(item => item.field === "Height")?.value || "",
         waist: pantData.find(item => item.field === "Waist")?.value || "",
         sheet: pantData.find(item => item.field === "Sheet")?.value || "",
@@ -312,7 +355,7 @@ export default function OrderDetails() {
 
   // Validate measurements
   const validateMeasurements = () => {
-    let requiresShirt = ['Two-piece Suit', 'Three-piece Suit', 'Formal Shirt', 'Sherwani', 'Kurta Pajama'].includes(garmentType);
+    let requiresShirt = ['Two-piece Suit', 'Three-piece Suit', 'Formal Shirt', 'Jodhpuri', 'Kurta Pajama'].includes(garmentType);
     let requiresPant = ['Two-piece Suit', 'Three-piece Suit'].includes(garmentType);
 
     if (requiresShirt) {
@@ -342,6 +385,49 @@ export default function OrderDetails() {
           <div className="flex items-center space-x-2 text-[15px]">
             <span className="text-gray-600 font-medium">Measurements</span>
           </div>
+
+          {/* Search Customer */}
+          <div className="w-full max-w-md">
+            {/* <label className="text-sm text-gray-500">Select Customer</label> */}
+            <input
+              type="text"
+              placeholder="Select Customer..."
+              className="mt-1 w-full border rounded-xl px-3 py-2 text-sm"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            {filtered.length > 0 && (
+              <ul className="fixed border rounded-xl mt-2 bg-white shadow max-h-48 overflow-y-auto">
+                {filtered.map((cust) => (
+                  <li
+                    key={cust._id}
+                    className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => {
+                      setQuery(cust.name);
+                      setSelectedCustomer(cust);
+                      setFiltered([]);
+                    }}
+                  >
+                    {cust.name} ({cust.mobile})
+                  </li>
+                ))}
+              </ul>
+            )}
+            {notFound && (
+              <div className="fixed mt-2 text-red-500 text-sm bg-white shadow">
+                User not found.{" "}
+                <button
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl shadow-sm hover:bg-blue-700"
+                  onClick={() => setIsAddModalOpen(true)}
+                >
+                  <FaUserPlus /> Add Customer
+                </button>
+              </div>
+            )}
+          </div>
+
+
+
           <div className="flex space-x-3">
             <button
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl shadow-sm hover:bg-blue-700"
@@ -360,46 +446,7 @@ export default function OrderDetails() {
           </div>
         </div>
 
-        {/* Search Customer */}
-        <div className="w-full max-w-md">
-          <label className="text-sm text-gray-500">Select Customer</label>
-          <input
-            type="text"
-            placeholder="Search customer by name..."
-            className="mt-1 w-full border rounded-xl px-3 py-2 text-sm"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          {filtered.length > 0 && (
-            <ul className="border rounded-xl mt-2 bg-white shadow max-h-48 overflow-y-auto">
-              {filtered.map((cust) => (
-                <li
-                  key={cust._id}
-                  className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => {
-                    setQuery(cust.name);
-                    setSelectedCustomer(cust);
-                    setFiltered([]);
-                  }}
-                >
-                  {cust.name} ({cust.mobile})
-                </li>
-              ))}
-            </ul>
-          )}
-          {notFound && (
-            <div className="mt-2 text-red-500 text-sm">
-              User not found.{" "}
-              <button
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl shadow-sm hover:bg-blue-700"
-                onClick={() => setIsAddModalOpen(true)}
-              >
-                <FaUserPlus /> Add Customer
-              </button>
-            </div>
-          )}
-        </div>
-
+        {/* Show Selected Customer */}
         {selectedCustomer && (
           <div className="mt-4 mb-4 border rounded-xl p-4 bg-gray-50">
             <h3 className="text-lg font-medium">Customer Details</h3>
@@ -448,7 +495,7 @@ export default function OrderDetails() {
                   <option value="">Select Garment</option>
                   <option value="Two-piece Suit">Two-piece Suit</option>
                   <option value="Three-piece Suit">Three-piece Suit</option>
-                  <option value="Sherwani">Sherwani</option>
+                  <option value="Jodhpuri">Jodhpuri</option>
                   <option value="Kurta Pajama">Kurta Pajama</option>
                   <option value="Blazer">Blazer</option>
                   <option value="Formal Shirt">Formal Shirt</option>
@@ -606,7 +653,7 @@ export default function OrderDetails() {
           </div>
         </div>
       </div>
-  
+
       {/* Add Customer Modal */}
       {
         isAddModalOpen && (

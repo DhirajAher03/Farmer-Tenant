@@ -106,11 +106,45 @@ const getAllOrders = async (req, res) => {
   }
 };
 
+
+// Update Order (status, measurements, etc)
+const updateOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const update = req.body;
+    const updatedOrder = await Order.findByIdAndUpdate(id, update, { new: true });
+    if (!updatedOrder) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    res.json(updatedOrder);
+  } catch (error) {
+    console.error('Error updating order:', error);
+    res.status(500).json({ message: 'Error updating order' });
+  }
+};
+
+// Delete Order
+const deleteOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await Order.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    res.json({ message: 'Order deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting order:', error);
+    res.status(500).json({ message: 'Error deleting order' });
+  }
+};
+
 module.exports = {
   addOrder,
   getOrders,
   getNewOrderId,
   getOrdersByCustomer,
   getMeasurementsByCustomer,
-  getAllOrders
+  getAllOrders,
+  updateOrder,
+  deleteOrder
 };

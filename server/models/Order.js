@@ -10,17 +10,18 @@ const orderSchema = new mongoose.Schema({
   notes: { type: String },
   measurements: {
     shirt: {
-      style: { type: String, enum: ['Regular', 'Slim Fit', 'Loose'] },
+      style: { type: String, enum: ['Apple Cut', 'Manella', 'Short Shirt'] },
       height: { type: String },
       chest: { type: String },
       stomach: { type: String },
       sheet: { type: String },
       sleeves: { type: String },
       shoulders: { type: String },
-      collar: { type: String }
+      collar: { type: String },
+      front: { type: String }
     },
     pant: {
-      style: { type: String, enum: ['Pleated', 'Flat Front', 'Regular'] },
+      style: { type: String, enum: ['Pleated', 'Flat Front', 'Apple Cut'] },
       height: { type: String },
       waist: { type: String },
       sheet: { type: String },

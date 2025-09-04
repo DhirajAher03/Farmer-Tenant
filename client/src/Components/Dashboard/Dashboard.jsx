@@ -4,13 +4,15 @@ import { AiOutlineBell } from "react-icons/ai";
 import { MdMessage } from "react-icons/md";
 import { TbReportAnalytics } from "react-icons/tb";
 import { FaRuler } from "react-icons/fa";
-import API from "../../api/axios.js"; // ✅ Your Axios instance
-import { useNavigate } from "react-router-dom"; // ✅ For navigation
+import API from "../../api/axios.js";
+import { useNavigate } from "react-router-dom";
+import { useOrders } from "../../context/OrderContext";
 
 const Dashboard = () => {
   const [customersCount, setCustomersCount] = useState(0);
   const [activities, setActivities] = useState([]);
-  const navigate = useNavigate(); // ✅ For navigation
+  const navigate = useNavigate();
+  const { orderCounts } = useOrders();
 
   useEffect(() => {
     fetchCustomersCount();
@@ -49,10 +51,10 @@ const Dashboard = () => {
     const newCustomerId = customersCount + 1;
     setCustomersCount(newCustomerId);
 
-   const newActivity = {
-  message: `✅ Customer Added: Customer ${newCustomerId} (ID: ${newCustomerId})`,
-  time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-};
+    const newActivity = {
+      message: `✅ Customer Added: Customer ${newCustomerId} (ID: ${newCustomerId})`,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
 
 
     setActivities((prev) => [newActivity, ...prev].slice(0, 3));
@@ -113,8 +115,8 @@ const Dashboard = () => {
             <h3 className="text-sm text-gray-500">Active Orders</h3>
             <FiClipboard className="text-gray-400" />
           </div>
-          <h2 className="text-2xl font-bold">57</h2>
-          <p className="text-xs text-gray-500">12 in work</p>
+          <h2 className="text-2xl font-bold">{orderCounts.active}</h2>
+          <p className="text-xs text-gray-500">Current active orders</p>
         </div>
 
         <div className="bg-white border border-gray-200 p-5 rounded-xl shadow hover:shadow-md transition">
@@ -122,8 +124,8 @@ const Dashboard = () => {
             <h3 className="text-sm text-gray-500">Completed Orders</h3>
             <FiCheckCircle className="text-gray-400" />
           </div>
-          <h2 className="text-2xl font-bold">1,204</h2>
-          <p className="text-xs text-gray-500">+8 today</p>
+          <h2 className="text-2xl font-bold">{orderCounts.completed}</h2>
+          <p className="text-xs text-gray-500">Total completed orders</p>
         </div>
 
         <div className="bg-white border border-gray-200 p-5 rounded-xl shadow hover:shadow-md transition">
@@ -131,8 +133,8 @@ const Dashboard = () => {
             <h3 className="text-sm text-gray-500">Pending Orders</h3>
             <FiClock className="text-gray-400" />
           </div>
-          <h2 className="text-2xl font-bold">19</h2>
-          <p className="text-xs text-gray-500">4 overdue</p>
+          <h2 className="text-2xl font-bold">{orderCounts.pending}</h2>
+          <p className="text-xs text-gray-500">Orders pending</p>
         </div>
       </div>
 
